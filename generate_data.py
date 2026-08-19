@@ -20,44 +20,50 @@ def generate_synthetic_weather_data(output_file='synthetic_weather_data.csv'):
     temperature = yearly_temp + daily_temp + np.random.normal(0, 2, n)
     
     # 2. Barometric Pressure (hPa)
-    # Mean around 1013 hPa, fluctuates around 990 to 1030
-    # Pressure drops before and during rain
+    # Base pressure with yearly seasonality
     pressure = 1013 + 10 * np.sin(2 * np.pi * day_of_year / 365.25) + np.random.normal(0, 3, n)
     
-    # Let's define rain events first so we can correlate other variables.
-    # Rain is more likely when pressure is dropping and in certain seasons, but let's make it simpler.
-    # Probability of rain increases when pressure is low.
-    rain_prob = np.where(pressure < 1010, 0.15, 0.02) 
-    # Add a bit of seasonality to rain
-    rain_prob += 0.05 * np.sin(2 * np.pi * day_of_year / 365.25)
-    rain_prob = np.clip(rain_prob, 0, 1)
+    # Create a smoothed random walk to represent broad weather fronts (storms)
+    # A larger window (24 hours) makes weather systems last realistically long
+    storm_front = np.convolve(np.random.normal(0, 1, n), np.ones(24)/24, mode='same')
     
-    # Generating rain events (Markov chain like would be better, let's use a smoothed random walk for storms)
-    storm_index = np.convolve(np.random.normal(0, 1, n), np.ones(6)/6, mode='same')
-    is_raining = (storm_index > 0.8) & (rain_prob > 0.05)
-    
-    rainfall_mm = np.zeros(n)
-    rainfall_mm[is_raining] = np.random.exponential(2, np.sum(is_raining)) # mostly light rain, some heavy
+    # Physical Correlation 1: Pressure drops significantly when a storm front moves in
+    pressure -= storm_front * 8
     
     # 3. Cloud Cover (0-100%)
-    # Highly correlated with rain. Near 100% when raining.
-    cloud_cover = np.random.uniform(0, 50, n)
-    cloud_cover[is_raining] = np.random.uniform(80, 100, np.sum(is_raining))
-    cloud_cover = np.clip(cloud_cover + np.random.normal(0, 10, n), 0, 100)
-    
-    # Drop pressure specifically when it rains to enforce correlation
-    pressure[is_raining] -= np.random.uniform(2, 5, np.sum(is_raining))
+    # Clouds increase with the storm front
+    cloud_cover = 30 + storm_front * 40 + np.random.normal(0, 10, n)
+    cloud_cover = np.clip(cloud_cover, 0, 100)
     
     # 4. Relative Humidity (%)
-    # Correlated with cloud cover and rain, inversely with temperature
-    humidity = 50 - 0.5 * temperature + 0.3 * cloud_cover + np.random.normal(0, 5, n)
-    humidity[is_raining] = np.random.uniform(85, 100, np.sum(is_raining))
+    # Physical Correlation 2: Humidity correlates with cloud cover and inversely with temperature
+    humidity = 60 - 0.5 * temperature + 0.4 * cloud_cover + np.random.normal(0, 5, n)
+    humidity += storm_front * 15  # Humidity spikes during storms
     humidity = np.clip(humidity, 10, 100)
     
-    # 5. Wind Speed (km/h)
-    # Higher during storms (low pressure, raining)
+    # 5. Rain Generation (Fixing Zero-Inflation)
+    # Rain happens when humidity is high, pressure is low, AND the storm front is active
+    # By tuning these thresholds, we can target ~15% rainy hours instead of 1.7%
+    is_raining = (humidity > 75) & (pressure < 1012) & (storm_front > 0.2)
+    
+    # Add random scattered showers (2% chance) to prevent perfect deterministic predictability
+    scattered_showers = np.random.random(n) < 0.02
+    is_raining = is_raining | scattered_showers
+    
+    # Generate Rainfall Volume
+    rainfall_mm = np.zeros(n)
+    
+    # Physical Correlation 3: Rain intensity is driven by how low the pressure drops
+    # The lower the pressure, the higher the exponential scale (heavier rain)
+    intensity_scale = np.clip((1015 - pressure) * 0.5, 0.5, 10.0)
+    
+    # Apply exponential distribution so most rain is light, but extremes can happen
+    rainfall_mm[is_raining] = np.random.exponential(scale=intensity_scale[is_raining])
+    
+    # 6. Wind Speed (km/h)
+    # Higher during storms (low pressure)
     wind_speed = np.random.lognormal(mean=2, sigma=0.5, size=n)
-    wind_speed[is_raining] += np.random.uniform(5, 15, np.sum(is_raining))
+    wind_speed[is_raining] += np.random.uniform(5, 20, np.sum(is_raining))
     wind_speed = np.clip(wind_speed, 0, 150)
     
     # 6. Wind Direction (degrees)

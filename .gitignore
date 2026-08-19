@@ -1,0 +1,23 @@
+# Virtual Environments
+.venv/
+venv/
+env/
+.env
+
+# Python Cache
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Data & Model Files
+synthetic_weather_data.csv
+*.pt
+*.pkl
+
+# Output Images
+*.png
+
+# OS & IDE Files
+.DS_Store
+.vscode/
+.idea/

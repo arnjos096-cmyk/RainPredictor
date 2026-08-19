@@ -76,8 +76,8 @@ def evaluate_and_plot(model, X_val, y_val, scaler, target_col_idx=10, seq_length
     # We need to inverse transform the scaled values back to real mm
     # Scaler expects shape (n_samples, n_features). We only care about target.
     # Create dummy arrays to use inverse_transform
-    dummy_true = np.zeros((len(y_slice_true), 11))
-    dummy_pred = np.zeros((len(y_slice_pred), 11))
+    dummy_true = np.zeros((len(y_slice_true), scaler.n_features_in_))
+    dummy_pred = np.zeros((len(y_slice_pred), scaler.n_features_in_))
     
     dummy_true[:, target_col_idx] = y_slice_true.squeeze()
     dummy_pred[:, target_col_idx] = y_slice_pred.squeeze()
@@ -146,7 +146,7 @@ def main():
     with open('scaler.pkl', 'rb') as f:
         scaler = pickle.load(f)
         
-    evaluate_and_plot(model, X_val, y_val, scaler, target_col_idx=10, seq_length=24, device=device)
+    evaluate_and_plot(model, X_val, y_val, scaler, target_col_idx=scaler.n_features_in_ - 1, seq_length=24, device=device)
     print("Pipeline complete.")
 
 if __name__ == '__main__':
