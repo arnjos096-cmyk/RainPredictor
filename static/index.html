@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RainPredictor AI — Deep Learning Weather & Rainfall Forecaster</title>
+    <meta name="description" content="State-of-the-art time-series LSTM rainfall prediction and meteorological risk analysis platform.">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body class="theme-storm">
+    <!-- Ambient Animated Canvas Background -->
+    <div class="weather-canvas-container">
+        <canvas id="weatherCanvas"></canvas>
+        <div class="glow-orb orb-1"></div>
+        <div class="glow-orb orb-2"></div>
+    </div>
+
+    <!-- Main App Container -->
+    <div class="app-wrapper">
+        <!-- Top Navigation & Status -->
+        <header class="top-nav glass-card">
+            <div class="brand-section">
+                <div class="brand-icon-wrapper">
+                    <i class="fa-solid fa-cloud-bolt brand-icon"></i>
+                    <span class="pulse-ring"></span>
+                </div>
+                <div class="brand-text">
+                    <div class="brand-title-row">
+                        <h1 class="brand-title">RainPredictor <span class="badge-ai">LSTM</span></h1>
+                        <span class="status-pill status-online" id="statusPill">
+                            <span class="status-dot"></span> <span id="statusText">Model Ready</span>
+                        </span>
+                    </div>
+                    <p class="brand-subtitle">Time-Series Deep Learning Meteorological Forecaster</p>
+                </div>
+            </div>
+
+            <!-- View Modes -->
+            <div class="nav-actions">
+                <div class="mode-toggle-group">
+                    <button class="mode-btn active" id="btnModeQuick" data-mode="quick">
+                        <i class="fa-solid fa-sliders"></i> Quick Control Deck
+                    </button>
+                    <button class="mode-btn" id="btnModeHistory" data-mode="history">
+                        <i class="fa-solid fa-timeline"></i> 24h Sequence Editor
+                    </button>
+                    <button class="mode-btn" id="btnModeDataset" data-mode="dataset">
+                        <i class="fa-solid fa-database"></i> Dataset Replay
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Weather Preset Scenarios Bar -->
+        <section class="scenario-bar glass-card">
+            <div class="scenario-header">
+                <span class="section-label"><i class="fa-solid fa-wand-magic-sparkles"></i> One-Click Scenarios:</span>
+            </div>
+            <div class="scenario-chips" id="scenarioChips">
+                <button class="scenario-chip active" data-scenario="thunderstorm">
+                    <i class="fa-solid fa-bolt text-red"></i> Approaching Thunderstorm
+                </button>
+                <button class="scenario-chip" data-scenario="monsoon">
+                    <i class="fa-solid fa-cloud-showers-heavy text-blue"></i> Monsoon Influx
+                </button>
+                <button class="scenario-chip" data-scenario="drizzle">
+                    <i class="fa-solid fa-cloud-rain text-cyan"></i> Morning Drizzle
+                </button>
+                <button class="scenario-chip" data-scenario="clear_sky">
+                    <i class="fa-solid fa-sun text-emerald"></i> Sunny Anticyclone
+                </button>
+                <button class="scenario-chip" data-scenario="passing_squall">
+                    <i class="fa-solid fa-wind text-amber"></i> Passing Squall
+                </button>
+            </div>
+        </section>
+
+        <!-- Main Dashboard Grid -->
+        <main class="dashboard-grid">
+            <!-- Left & Central: Weather Parameter Controls -->
+            <section class="control-panel glass-card" id="controlPanel">
+                <div class="panel-header">
+                    <div>
+                        <h2 class="panel-title"><i class="fa-solid fa-satellite-dish"></i> Atmospheric Telemetry Controls</h2>
+                        <p class="panel-desc" id="panelSubtext">Tune live weather variables to trigger real-time neural inference.</p>
+                    </div>
+                    <div class="control-actions">
+                        <button class="btn-secondary btn-sm" id="btnRandomize" title="Randomize Parameters">
+                            <i class="fa-solid fa-shuffle"></i> Randomize
+                        </button>
+                        <button class="btn-secondary btn-sm" id="btnReset" title="Reset to Defaults">
+                            <i class="fa-solid fa-rotate-left"></i> Reset
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Quick Deck View -->
+                <div class="view-section" id="quickDeckView">
+                    <!-- Synoptic Trend Row -->
+                    <div class="synoptic-trend-row">
+                        <div class="trend-field">
+                            <label><i class="fa-solid fa-chart-line"></i> 24h Barometric Pressure Trend</label>
+                            <div class="trend-selector" id="pressureTrendGroup">
+                                <button class="trend-btn active" data-trend="falling">
+                                    <i class="fa-solid fa-arrow-trend-down text-red"></i> Falling (Frontal Low)
+                                </button>
+                                <button class="trend-btn" data-trend="steady">
+                                    <i class="fa-solid fa-arrow-right text-amber"></i> Steady
+                                </button>
+                                <button class="trend-btn" data-trend="rising">
+                                    <i class="fa-solid fa-arrow-trend-up text-emerald"></i> Rising (High Ridge)
+                                </button>
+                            </div>
+                        </div>
+                        <div class="trend-field hour-slider-field">
+                            <div class="label-row">
+                                <label><i class="fa-regular fa-clock"></i> Hour of Day</label>
+                                <span class="val-pill" id="val_hour_of_day">14:00 (Daylight)</span>
+                            </div>
+                            <input type="range" id="param_hour_of_day" min="0" max="23" value="14" step="1" class="slider custom-slider">
+                        </div>
+                    </div>
+
+                    <!-- Parameter Cards Grid -->
+                    <div class="telemetry-grid">
+                        <!-- 1. Temperature -->
+                        <div class="telemetry-card">
+                            <div class="card-top">
+                                <span class="param-name"><i class="fa-solid fa-temperature-half text-amber"></i> Temperature</span>
+                                <span class="param-val" id="val_temperature">21.5 <span class="unit">°C</span></span>
+                            </div>
+                            <input type="range" id="param_temperature" min="-10" max="50" step="0.5" value="21.5" class="slider">
+                            <div class="slider-ticks"><span>-10°C</span><span>Freezing (0°)</span><span>Warm (25°)</span><span>50°C</span></div>
+                        </div>
+
+                        <!-- 2. Relative Humidity -->
+                        <div class="telemetry-card">
+                            <div class="card-top">
+                                <span class="param-name"><i class="fa-solid fa-droplet text-blue"></i> Relative Humidity</span>
+                                <span class="param-val" id="val_humidity">94 <span class="unit">%</span></span>
+                            </div>
+                            <input type="range" id="param_humidity" min="0" max="100" step="1" value="94" class="slider slider-blue">
+                            <div class="slider-ticks"><span>0% (Arid)</span><span>50%</span><span>80%</span><span>100% (Saturated)</span></div>
+                        </div>
+
+                        <!-- 3. Barometric Pressure -->
+                        <div class="telemetry-card">
+                            <div class="card-top">
+                                <span class="param-name"><i class="fa-solid fa-gauge-high text-cyan"></i> Barometric Pressure</span>
+                                <span class="param-val" id="val_pressure">993.0 <span class="unit">hPa</span></span>
+                            </div>
+                            <input type="range" id="param_pressure" min="960" max="1050" step="0.5" value="993.0" class="slider slider-purple">
+                            <div class="slider-ticks"><span>960 (Storm)</span><span>1000 (Low)</span><span>1013 (Std)</span><span>1050 (High)</span></div>
+                        </div>
+
+                        <!-- 4. Cloud Cover -->
+                        <div class="telemetry-card">
+                            <div class="card-top">
+                                <span class="param-name"><i class="fa-solid fa-cloud text-slate"></i> Cloud Cover</span>
+                                <span class="param-val" id="val_cloud_cover">98 <span class="unit">%</span></span>
+                            </div>
+                            <input type="range" id="param_cloud_cover" min="0" max="100" step="1" value="98" class="slider">
+                            <div class="slider-ticks"><span>0% (Clear)</span><span>30% (Scattered)</span><span>70% (Broken)</span><span>100% (Overcast)</span></div>
+                        </div>
+
+                        <!-- 5. Wind Speed -->
+                        <div class="telemetry-card">
+                            <div class="card-top">
+                                <span class="param-name"><i class="fa-solid fa-wind text-emerald"></i> Wind Speed</span>
+                                <span class="param-val" id="val_wind_speed">42.0 <span class="unit">km/h</span></span>
+                            </div>
+                            <input type="range" id="param_wind_speed" min="0" max="150" step="1" value="42" class="slider">
+                            <div class="slider-ticks"><span>0 (Calm)</span><span>30 (Breeze)</span><span>60 (Gale)</span><span>150 (Storm)</span></div>
+                        </div>
+
+                        <!-- 6. Wind Direction -->
+                        <div class="telemetry-card">
+                            <div class="card-top">
+                                <span class="param-name"><i class="fa-solid fa-compass text-amber"></i> Wind Direction</span>
+                                <span class="param-val" id="val_wind_direction">225 <span class="unit">° (SW)</span></span>
+                            </div>
+                            <input type="range" id="param_wind_direction" min="0" max="360" step="5" value="225" class="slider">
+                            <div class="slider-ticks"><span>0° (N)</span><span>90° (E)</span><span>180° (S)</span><span>270° (W)</span></div>
+                        </div>
+
+                        <!-- 7. Soil Moisture -->
+                        <div class="telemetry-card">
+                            <div class="card-top">
+                                <span class="param-name"><i class="fa-solid fa-seedling text-emerald"></i> Soil Moisture</span>
+                                <span class="param-val" id="val_soil_moisture">65 <span class="unit">%</span></span>
+                            </div>
+                            <input type="range" id="param_soil_moisture" min="0" max="100" step="1" value="65" class="slider">
+                            <div class="slider-ticks"><span>0% (Dry)</span><span>35% (Moist)</span><span>75% (Wet)</span><span>100% (Waterlogged)</span></div>
+                        </div>
+
+                        <!-- 8. Solar Radiation -->
+                        <div class="telemetry-card">
+                            <div class="card-top">
+                                <span class="param-name"><i class="fa-solid fa-sun text-amber"></i> Solar Radiation</span>
+                                <span class="param-val" id="val_solar_radiation">40 <span class="unit">W/m²</span></span>
+                            </div>
+                            <input type="range" id="param_solar_radiation" min="0" max="1200" step="10" value="40" class="slider">
+                            <div class="slider-ticks"><span>0 (Night/Dark)</span><span>400 (Diffused)</span><span>800 (Direct)</span><span>1200 (Peak)</span></div>
+                        </div>
+
+                        <!-- 9. Dew Point (Computed/Manual) -->
+                        <div class="telemetry-card">
+                            <div class="card-top">
+                                <span class="param-name"><i class="fa-solid fa-temperature-arrow-down text-cyan"></i> Dew Point</span>
+                                <span class="param-val" id="val_dew_point">20.3 <span class="unit">°C</span></span>
+                            </div>
+                            <input type="range" id="param_dew_point" min="-15" max="35" step="0.5" value="20.3" class="slider">
+                            <div class="slider-ticks"><span>-15°C (Dry)</span><span>10°C (Comfort)</span><span>20°C (Muggy)</span><span>35°C (Extreme)</span></div>
+                        </div>
+
+                        <!-- 10. Evapotranspiration -->
+                        <div class="telemetry-card">
+                            <div class="card-top">
+                                <span class="param-name"><i class="fa-solid fa-water text-purple"></i> Evapotranspiration</span>
+                                <span class="param-val" id="val_evapotranspiration">0.05 <span class="unit">mm/h</span></span>
+                            </div>
+                            <input type="range" id="param_evapotranspiration" min="0" max="2.5" step="0.01" value="0.05" class="slider">
+                            <div class="slider-ticks"><span>0.0 mm/h</span><span>0.8 mm/h</span><span>1.6 mm/h</span><span>2.5 mm/h</span></div>
+                        </div>
+
+                        <!-- 11. Current Measured Rain -->
+                        <div class="telemetry-card">
+                            <div class="card-top">
+                                <span class="param-name"><i class="fa-solid fa-cloud-showers-water text-blue"></i> Current Rain (t₀)</span>
+                                <span class="param-val" id="val_rainfall_mm">1.2 <span class="unit">mm</span></span>
+                            </div>
+                            <input type="range" id="param_rainfall_mm" min="0" max="40" step="0.2" value="1.2" class="slider">
+                            <div class="slider-ticks"><span>0.0 mm (None)</span><span>5 mm (Moderate)</span><span>15 mm (Heavy)</span><span>40 mm (Downpour)</span></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 24-Hour Matrix Table View (Hidden by default) -->
+                <div class="view-section hidden" id="matrixDeckView">
+                    <div class="matrix-toolbar">
+                        <p class="matrix-info"><i class="fa-solid fa-circle-info"></i> Edit any of the 24 preceding hours or paste a JSON/CSV window.</p>
+                        <div class="matrix-buttons">
+                            <button class="btn-secondary btn-sm" id="btnInterpolate"><i class="fa-solid fa-bezier-curve"></i> Smooth Interpolation</button>
+                            <button class="btn-secondary btn-sm" id="btnCopyJson"><i class="fa-solid fa-copy"></i> Copy Sequence</button>
+                        </div>
+                    </div>
+                    <div class="matrix-table-container">
+                        <table class="matrix-table" id="matrixTable">
+                            <thead>
+                                <tr>
+                                    <th>Hour</th>
+                                    <th>Temp (°C)</th>
+                                    <th>Hum (%)</th>
+                                    <th>Press (hPa)</th>
+                                    <th>Wind (km/h)</th>
+                                    <th>Clouds (%)</th>
+                                    <th>Solar (W/m²)</th>
+                                    <th>Rain (mm)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="matrixTableBody">
+                                <!-- Generated by JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Dataset Replay View (Hidden by default) -->
+                <div class="view-section hidden" id="datasetDeckView">
+                    <div class="dataset-replay-controls">
+                        <div class="dataset-scrubber-row">
+                            <label><i class="fa-solid fa-clock-rotate-left"></i> Scrub Timeline (Dataset Index: <span id="datasetIdxLabel">1000</span> / 43,800)</label>
+                            <input type="range" id="datasetScrubber" min="0" max="43770" step="1" value="1000" class="slider">
+                        </div>
+                        <div class="dataset-meta-row">
+                            <div class="meta-item"><span class="meta-label">Window Start:</span> <span class="meta-val" id="metaDateStart">-</span></div>
+                            <div class="meta-item"><span class="meta-label">Window End:</span> <span class="meta-val" id="metaDateEnd">-</span></div>
+                            <div class="meta-item"><span class="meta-label">Ground Truth Next Hour Rain:</span> <span class="meta-val highlight" id="metaActualRain">-</span></div>
+                        </div>
+                        <div class="dataset-btn-row">
+                            <button class="btn-primary" id="btnLoadSlice"><i class="fa-solid fa-play"></i> Run Inference on Historical Slice</button>
+                            <button class="btn-secondary" id="btnRandomSlice"><i class="fa-solid fa-dice"></i> Jump to Storm Event</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Right: Real-time Prediction & Meteorological Intelligence -->
+            <section class="prediction-panel">
+                <!-- Main Gauge Card -->
+                <div class="glass-card gauge-card" id="gaugeCard">
+                    <div class="gauge-header">
+                        <span class="badge-tag"><i class="fa-solid fa-brain"></i> Neural Forecast</span>
+                        <span class="timestamp" id="lastInferenceTime">Live</span>
+                    </div>
+
+                    <div class="gauge-content">
+                        <!-- Circular Radial Gauge -->
+                        <div class="radial-gauge-wrapper">
+                            <svg class="radial-gauge" viewBox="0 0 200 200">
+                                <circle class="gauge-bg" cx="100" cy="100" r="80"></circle>
+                                <circle class="gauge-progress" id="gaugeProgress" cx="100" cy="100" r="80" stroke-dasharray="502" stroke-dashoffset="350"></circle>
+                            </svg>
+                            <div class="gauge-center-text">
+                                <span class="gauge-val" id="gaugeValue">--</span>
+                                <span class="gauge-unit">mm / hour</span>
+                                <span class="gauge-label">Next Hour Rain</span>
+                            </div>
+                        </div>
+
+                        <!-- Status Badge & Probability -->
+                        <div class="gauge-summary">
+                            <div class="risk-badge" id="riskBadge">
+                                <i class="fa-solid fa-bolt-lightning" id="riskIcon"></i>
+                                <span id="riskLabel">Calculating...</span>
+                            </div>
+                            <p class="risk-desc" id="riskDescription">Loading model evaluation...</p>
+
+                            <div class="prob-bar-container">
+                                <div class="prob-label-row">
+                                    <span>Precipitation Probability</span>
+                                    <span id="probPercent">--%</span>
+                                </div>
+                                <div class="prob-track">
+                                    <div class="prob-fill" id="probFill" style="width: 0%;"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 12-Hour Forward Projection Chart -->
+                <div class="glass-card forecast-chart-card">
+                    <div class="card-header-row">
+                        <h3 class="card-heading"><i class="fa-solid fa-chart-area"></i> 12-Hour Forward Horizon</h3>
+                        <span class="forecast-status-tag" id="forecastStatusTag">Autoregressive</span>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="forecastChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Meteorological Intelligence Factors -->
+                <div class="glass-card insights-card">
+                    <div class="card-header-row">
+                        <h3 class="card-heading"><i class="fa-solid fa-microchip"></i> Diagnostic Atmospheric Drivers</h3>
+                    </div>
+                    <div class="insights-list" id="insightsList">
+                        <!-- Dynamic Insights -->
+                        <div class="insight-item">
+                            <i class="fa-solid fa-gauge-simple-high insight-icon text-red"></i>
+                            <div>
+                                <h4 class="insight-title">Analyzing Dynamics...</h4>
+                                <p class="insight-detail">Evaluating pressure gradient, thermal lapse rate, and humidity equilibrium.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- Bottom Section: 24h Sequence Timeline & Model Specifications -->
+        <section class="bottom-grid">
+            <!-- 24-Hour Multi-Metric Timeline -->
+            <div class="glass-card chart-card-wide">
+                <div class="card-header-row">
+                    <div>
+                        <h3 class="card-heading"><i class="fa-solid fa-chart-line"></i> 24-Hour Synoptic Time-Series Matrix</h3>
+                        <p class="card-subheading">Preceding 24 hours of ambient weather dynamics feeding into the LSTM input layer.</p>
+                    </div>
+                    <div class="chart-legend-custom">
+                        <span class="legend-chip legend-pressure"><span class="chip-dot"></span> Pressure (hPa)</span>
+                        <span class="legend-chip legend-cloud"><span class="chip-dot"></span> Cloud Cover (%)</span>
+                        <span class="legend-chip legend-rain"><span class="chip-dot"></span> Rainfall (mm)</span>
+                    </div>
+                </div>
+                <div class="wide-chart-container">
+                    <canvas id="timelineChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Model Architecture Specifications -->
+            <div class="glass-card specs-card">
+                <h3 class="card-heading"><i class="fa-solid fa-network-wired"></i> Neural Architecture Specs</h3>
+                <div class="specs-grid">
+                    <div class="spec-node">
+                        <span class="spec-key">Network Type</span>
+                        <span class="spec-val">Stacked LSTM</span>
+                    </div>
+                    <div class="spec-node">
+                        <span class="spec-key">Input Shape</span>
+                        <span class="spec-val">[Batch, 24, 11]</span>
+                    </div>
+                    <div class="spec-node">
+                        <span class="spec-key">Hidden Units</span>
+                        <span class="spec-val">64 (2 Layers)</span>
+                    </div>
+                    <div class="spec-node">
+                        <span class="spec-key">Dropout</span>
+                        <span class="spec-val">0.20</span>
+                    </div>
+                    <div class="spec-node">
+                        <span class="spec-key">Output Head</span>
+                        <span class="spec-val">Linear + ReLU</span>
+                    </div>
+                    <div class="spec-node">
+                        <span class="spec-key">Scaler Normalizer</span>
+                        <span class="spec-val">MinMaxScaler (0-1)</span>
+                    </div>
+                </div>
+                <div class="feature-tag-list">
+                    <span class="feature-tag">Temperature</span>
+                    <span class="feature-tag">Humidity</span>
+                    <span class="feature-tag">Pressure</span>
+                    <span class="feature-tag">Wind Speed</span>
+                    <span class="feature-tag">Wind Dir</span>
+                    <span class="feature-tag">Soil Moisture</span>
+                    <span class="feature-tag">Solar Rad</span>
+                    <span class="feature-tag">Cloud Cover</span>
+                    <span class="feature-tag">Dew Point</span>
+                    <span class="feature-tag">Evapotranspiration</span>
+                    <span class="feature-tag target">Rainfall (Target)</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <footer class="app-footer">
+            <p>RainPredictor AI Deep Learning Platform • PyTorch LSTM Architecture • Built for High Precision Weather Forecasting</p>
+        </footer>
+    </div>
+
+    <!-- Custom Script -->
+    <script src="/static/js/app.js"></script>
+</body>
+</html>
