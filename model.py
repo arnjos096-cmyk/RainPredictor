@@ -1,49 +1,59 @@
 import torch
 import torch.nn as nn
 
-class RainfallLSTM(nn.Module):
-    def __init__(self, input_size=11, hidden_size=64, num_layers=2, dropout=0.2):
-        super(RainfallLSTM, self).__init__()
-        self.hidden_size = hidden_size
-        self.num_layers = num_layers
+class Attention(nn.Module):
+    def __init__(self, hidden_size):
+        super(Attention, self).__init__()
+        self.attention = nn.Linear(hidden_size, 1, bias=False)
+
+    def forward(self, lstm_out):
+        # Calculate attention scores for each time step
+        attn_scores = self.attention(lstm_out) # (batch, seq_len, 1)
+        attn_weights = torch.softmax(attn_scores, dim=1) 
         
-        # LSTM layer
-        # batch_first=True means the input should be (batch_size, seq_len, input_size)
-        self.lstm = nn.LSTM(input_size, hidden_size, num_layers, 
-                            batch_first=True, dropout=dropout if num_layers > 1 else 0)
+        # Multiply weights by LSTM output to get the context vector
+        context_vector = torch.sum(attn_weights * lstm_out, dim=1) # (batch, hidden_size)
+        return context_vector, attn_weights
+
+class EnhancedRainfallLSTM(nn.Module):
+    def __init__(self, actual_input_size=19, legacy_input_size=11, hidden_size=64, num_layers=2, dropout=0.2):
+        super(EnhancedRainfallLSTM, self).__init__()
         
-        # Dropout layer
+        # Dynamic Wrapper to satisfy constraint: maps new features down to the original input shape
+        self.feature_proj = nn.Linear(actual_input_size, legacy_input_size)
+        
+        # Upgrade to BiLSTM
+        self.lstm = nn.LSTM(legacy_input_size, hidden_size, num_layers, 
+                            batch_first=True, dropout=dropout if num_layers > 1 else 0,
+                            bidirectional=True)
+        
+        # Attention on top of BiLSTM (hidden_size * 2 because it's bidirectional)
+        self.attention = Attention(hidden_size * 2)
         self.dropout = nn.Dropout(dropout)
-        
-        # Output layer to predict a single continuous value (rainfall_mm)
-        self.fc = nn.Linear(hidden_size, 1)
+        self.fc = nn.Linear(hidden_size * 2, 1)
         
     def forward(self, x):
-        # Initialize hidden state and cell state
-        h0 = torch.zeros(self.num_layers, x.size(0), self.hidden_size).to(x.device)
-        c0 = torch.zeros(self.num_layers, x.size(0), self.hidden_size).to(x.device)
+        # 1. Project to original shape dimension
+        x = self.feature_proj(x)
         
-        # Forward propagate LSTM
-        # out: tensor of shape (batch_size, seq_length, hidden_size)
-        out, _ = self.lstm(x, (h0, c0))
+        # 2. BiLSTM extraction
+        out, _ = self.lstm(x)
         
-        # Decode the hidden state of the last time step
-        # out[:, -1, :] gets the last time step across the sequence
-        out = self.dropout(out[:, -1, :])
+        # 3. Attention mechanism
+        context, attn_weights = self.attention(out)
+        
+        # 4. Final prediction
+        out = self.dropout(context)
         out = self.fc(out)
-        
-        # Since we scaled rainfall with MinMaxScaler (0-1), we can use a ReLU 
-        # to ensure no negative rain predictions, though the model might naturally learn this.
-        out = torch.relu(out)
-        return out
+        return torch.relu(out)
 
 if __name__ == '__main__':
     # Test instantiation
-    model = RainfallLSTM()
+    model = EnhancedRainfallLSTM()
     print("Model architecture:")
     print(model)
     
     # Test with dummy data
-    dummy_input = torch.randn(32, 24, 11) # Batch size: 32, Seq Len: 24, Features: 11
+    dummy_input = torch.randn(32, 24, 19) # Batch size: 32, Seq Len: 24, Features: 19
     dummy_output = model(dummy_input)
     print(f"Output shape: {dummy_output.shape}")

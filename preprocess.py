@@ -26,17 +26,31 @@ def preprocess_data(input_file='synthetic_weather_data.csv', seq_length=24):
         
     df = pd.read_csv(input_file, index_col='date', parse_dates=True)
     
-    # 11 features. We want to predict rainfall_mm (which is the last column in df).
-    features = df.columns.tolist()
+    # 1. Temporal Embeddings
+    df['hour_sin'] = np.sin(2 * np.pi * df.index.hour / 24.0)
+    df['hour_cos'] = np.cos(2 * np.pi * df.index.hour / 24.0)
+    
+    days_in_year = 365.25
+    df['day_sin'] = np.sin(2 * np.pi * df.index.dayofyear / days_in_year)
+    df['day_cos'] = np.cos(2 * np.pi * df.index.dayofyear / days_in_year)
+    
+    # 2. Rolling Averages (Trend Momentum)
+    df['pressure_roll_3'] = df['pressure'].rolling(window=3).mean().bfill()
+    df['pressure_roll_6'] = df['pressure'].rolling(window=6).mean().bfill()
+    df['humidity_roll_3'] = df['humidity'].rolling(window=3).mean().bfill()
+    df['humidity_roll_6'] = df['humidity'].rolling(window=6).mean().bfill()
+
+    # Move target column to the end for easier indexing
     target_col = 'rainfall_mm'
-    target_col_idx = features.index(target_col)
+    features = [c for c in df.columns if c != target_col] + [target_col]
+    df = df[features]
+    target_col_idx = len(features) - 1
     
     # Scale data
     print("Scaling data...")
     scaler = MinMaxScaler()
     scaled_data = scaler.fit_transform(df)
     
-    # Save scaler for later inverse transformations if needed
     with open('scaler.pkl', 'wb') as f:
         pickle.dump(scaler, f)
         

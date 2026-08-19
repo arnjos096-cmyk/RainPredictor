@@ -5,9 +5,18 @@ from torch.utils.data import TensorDataset, DataLoader
 import matplotlib.pyplot as plt
 import pickle
 import numpy as np
+from sklearn.metrics import f1_score, mean_absolute_error
 import pandas as pd
 import os
-from model import RainfallLSTM
+from model import EnhancedRainfallLSTM
+
+def custom_evaluate(y_true, y_pred, threshold_mm=0.1):
+    y_true_bin = (y_true > threshold_mm).astype(int)
+    y_pred_bin = (y_pred > threshold_mm).astype(int)
+    
+    f1 = f1_score(y_true_bin, y_pred_bin, zero_division=0)
+    mae = mean_absolute_error(y_true, y_pred)
+    return f1, mae
 
 def train_model(model, train_loader, val_loader, criterion, optimizer, num_epochs=10, device='cpu'):
     model.to(device)
@@ -89,6 +98,11 @@ def evaluate_and_plot(model, X_val, y_val, scaler, target_col_idx=10, seq_length
     plt.savefig('actual_vs_predicted.png')
     print("Saved actual_vs_predicted.png")
     
+    f1, mae = custom_evaluate(y_true_unscaled, y_pred_unscaled)
+    print(f"\n--- Model Evaluation ---")
+    print(f"Validation F1-Score (Rain/No Rain): {f1:.4f}")
+    print(f"Validation MAE (Volume): {mae:.4f} mm\n")
+    
 def main():
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     print(f"Using device: {device}")
@@ -109,8 +123,8 @@ def main():
     val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
     
     # Model Setup
-    model = RainfallLSTM(input_size=11, hidden_size=64, num_layers=2, dropout=0.2)
-    criterion = nn.MSELoss()
+    model = EnhancedRainfallLSTM(actual_input_size=19, legacy_input_size=11, hidden_size=64, num_layers=2, dropout=0.2)
+    criterion = nn.HuberLoss(delta=1.0)
     optimizer = optim.Adam(model.parameters(), lr=0.001)
     
     # Train
