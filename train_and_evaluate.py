@@ -176,9 +176,9 @@ def main():
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
     val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
     
-    # Initialize INSAT XAI Model
-    model = INSAT_Rainfall_XAI_LSTM(input_size=11, hidden_size=64, num_layers=2, dropout=0.2).to(device)
-    optimizer = optim.Adam(model.parameters(), lr=0.002)
+    # Initialize INSAT XAI Model (Peephole ConvLSTM) with optimal hyperparameters
+    model = INSAT_Rainfall_XAI_LSTM(input_size=11, hidden_size=64, num_layers=1, dropout=0.3).to(device)
+    optimizer = optim.Adam(model.parameters(), lr=0.000389)
     
     train_losses, val_losses = train_model(model, train_loader, val_loader, optimizer, num_epochs=12, device=device)
     

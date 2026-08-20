@@ -1,5 +1,6 @@
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 import numpy as np
 
 class TemporalAttention(nn.Module):
@@ -23,70 +24,137 @@ class TemporalAttention(nn.Module):
         return context_vector, attn_weights.squeeze(-1) # (batch, hidden_size), (batch, seq_len)
 
 
-class INSAT_Rainfall_XAI_LSTM(nn.Module):
+class CausalConv1d(nn.Module):
     """
-    ISRO SIH260006 Explainable AI Model for High-Impact Rainfall Nowcasting using INSAT-3D/3DR Satellite Data.
-    Features:
-    - Dynamic feature projection layer supporting 11 INSAT/meteorological channels
-    - Bidirectional LSTM for synoptic temporal feature extraction
-    - Temporal Attention for hourly timeline explainability
-    - Feature Attribution module for XAI predictor ranking
+    1D Causal Convolution. 
+    Pads the sequence on the left so the kernel never looks into the future.
     """
-    def __init__(self, input_size=11, hidden_size=64, num_layers=2, dropout=0.2):
-        super(INSAT_Rainfall_XAI_LSTM, self).__init__()
+    def __init__(self, in_channels, out_channels, kernel_size, dilation=1):
+        super(CausalConv1d, self).__init__()
+        self.padding = (kernel_size - 1) * dilation
+        self.conv = nn.Conv1d(in_channels, out_channels, kernel_size, padding=self.padding, dilation=dilation)
+
+    def forward(self, x):
+        # x is (batch, channels, seq_len)
+        x = self.conv(x)
+        if self.padding > 0:
+            x = x[:, :, :-self.padding] # Remove right padding to ensure causality
+        return x
+
+
+class PeepholeLSTMCell(nn.Module):
+    """
+    Custom LSTM Cell with Peephole connections.
+    Gates (Forget, Input, Output) can directly look at the memory cell state (c_t).
+    """
+    def __init__(self, input_size, hidden_size):
+        super(PeepholeLSTMCell, self).__init__()
         self.input_size = input_size
         self.hidden_size = hidden_size
-        self.num_layers = num_layers
         
-        # BiLSTM feature extraction
-        self.lstm = nn.LSTM(
-            input_size, 
-            hidden_size, 
-            num_layers, 
-            batch_first=True, 
-            dropout=dropout if num_layers > 1 else 0,
-            bidirectional=True
-        )
+        self.W_f = nn.Linear(input_size + hidden_size, hidden_size)
+        self.V_f = nn.Parameter(torch.Tensor(hidden_size))
         
-        # Temporal attention over BiLSTM bidirectional hidden state (hidden_size * 2)
-        self.attention = TemporalAttention(hidden_size * 2)
+        self.W_i = nn.Linear(input_size + hidden_size, hidden_size)
+        self.V_i = nn.Parameter(torch.Tensor(hidden_size))
+        
+        self.W_c = nn.Linear(input_size + hidden_size, hidden_size)
+        
+        self.W_o = nn.Linear(input_size + hidden_size, hidden_size)
+        self.V_o = nn.Parameter(torch.Tensor(hidden_size))
+        
+        self.init_weights()
+
+    def init_weights(self):
+        for name, param in self.named_parameters():
+            if 'bias' in name:
+                nn.init.constant_(param, 0.0)
+            elif 'weight' in name:
+                nn.init.xavier_uniform_(param)
+        nn.init.uniform_(self.V_f, -0.1, 0.1)
+        nn.init.uniform_(self.V_i, -0.1, 0.1)
+        nn.init.uniform_(self.V_o, -0.1, 0.1)
+        # Forget gate bias = 1.0
+        nn.init.constant_(self.W_f.bias, 1.0)
+
+    def forward(self, x, states):
+        h_prev, c_prev = states
+        
+        xh = torch.cat([x, h_prev], dim=1)
+        
+        f_t = torch.sigmoid(self.W_f(xh) + self.V_f * c_prev)
+        i_t = torch.sigmoid(self.W_i(xh) + self.V_i * c_prev)
+        c_tilde = torch.tanh(self.W_c(xh))
+        
+        c_t = f_t * c_prev + i_t * c_tilde
+        
+        o_t = torch.sigmoid(self.W_o(xh) + self.V_o * c_t)
+        h_t = o_t * torch.tanh(c_t)
+        
+        return h_t, c_t
+
+
+class Peephole_Conv_LSTM(nn.Module):
+    """
+    Causal Real-Time Nowcasting Architecture:
+    1D Causal Convolution -> Peephole LSTM -> Temporal Attention
+    """
+    def __init__(self, input_size=11, hidden_size=64, num_layers=1, dropout=0.2):
+        super(Peephole_Conv_LSTM, self).__init__()
+        self.input_size = input_size
+        self.hidden_size = hidden_size
+        
+        # 1. Local Pattern Extraction (Causal)
+        self.conv1d = CausalConv1d(in_channels=input_size, out_channels=hidden_size, kernel_size=3)
+        
+        # 2. Peephole Recurrence
+        self.peephole_cell = PeepholeLSTMCell(input_size=hidden_size, hidden_size=hidden_size)
+        
+        # 3. Unidirectional Attention
+        self.attention = TemporalAttention(hidden_size)
         self.dropout = nn.Dropout(dropout)
         
-        # Output Regression Head (Predicts precipitation rate mm/hr)
-        self.fc = nn.Linear(hidden_size * 2, 1)
-        
+        # Output Regression
+        self.fc = nn.Linear(hidden_size, 1)
+
     def forward(self, x):
-        # x shape: (batch, seq_len, input_size)
-        out, _ = self.lstm(x)
-        context, attn_weights = self.attention(out)
+        batch_size, seq_len, _ = x.size()
+        
+        x_conv = x.permute(0, 2, 1)
+        conv_out = self.conv1d(x_conv) # (batch, hidden_size, seq_len)
+        conv_out = conv_out.permute(0, 2, 1) # Back to (batch, seq_len, hidden_size)
+        
+        device = x.device
+        h_t = torch.zeros(batch_size, self.hidden_size).to(device)
+        c_t = torch.zeros(batch_size, self.hidden_size).to(device)
+        
+        outputs = []
+        for t in range(seq_len):
+            h_t, c_t = self.peephole_cell(conv_out[:, t, :], (h_t, c_t))
+            outputs.append(h_t.unsqueeze(1))
+            
+        lstm_out = torch.cat(outputs, dim=1)
+        
+        context, attn_weights = self.attention(lstm_out)
         out = self.dropout(context)
         out = self.fc(out)
         return torch.relu(out), attn_weights
 
     def explain_instance(self, x_single_tensor, feature_names=None):
-        """
-        XAI Explainability Function:
-        Computes both Temporal Attention Weights and Feature Attribution Scores.
-        """
         self.eval()
         x = x_single_tensor.clone().detach().requires_grad_(True)
         if x.dim() == 2:
-            x = x.unsqueeze(0) # (1, 24, 11)
+            x = x.unsqueeze(0)
             
         pred, attn_weights = self.forward(x)
         
-        # Integrated / Saliency Gradient for Feature Attribution
         pred.backward()
-        gradients = x.grad.data.abs() # (1, 24, 11)
+        gradients = x.grad.data.abs()
         
-        # Temporal attention array across 24 hours
-        temporal_importance = attn_weights.detach().cpu().numpy()[0] # (24,)
-        
-        # Feature importance: weight gradient by attention across timesteps
+        temporal_importance = attn_weights.detach().cpu().numpy()[0]
         weighted_grads = gradients[0].cpu().numpy() * temporal_importance[:, None]
-        feature_importance_raw = np.sum(weighted_grads, axis=0) # (11,)
+        feature_importance_raw = np.sum(weighted_grads, axis=0)
         
-        # Normalize to percentage sum = 100
         total_sum = np.sum(feature_importance_raw)
         if total_sum > 0:
             feature_importance_pct = (feature_importance_raw / total_sum) * 100.0
@@ -99,17 +167,15 @@ class INSAT_Rainfall_XAI_LSTM(nn.Module):
             "feature_importance": [round(float(pct), 2) for pct in feature_importance_pct]
         }
 
-# Aliases for backward compatibility
-EnhancedRainfallLSTM = INSAT_Rainfall_XAI_LSTM
-RainfallLSTM = INSAT_Rainfall_XAI_LSTM
+# Aliases
+INSAT_Rainfall_XAI_LSTM = Peephole_Conv_LSTM
+EnhancedRainfallLSTM = Peephole_Conv_LSTM
+RainfallLSTM = Peephole_Conv_LSTM
 
 if __name__ == '__main__':
-    model = INSAT_Rainfall_XAI_LSTM()
-    print("ISRO INSAT-3D/3DR XAI Architecture Initialized:")
+    model = Peephole_Conv_LSTM()
+    print("Peephole Conv1D LSTM Initialized:")
     print(model)
     dummy_x = torch.randn(1, 24, 11)
     explanation = model.explain_instance(dummy_x)
-    print("Test Explanation Output:")
-    print("Pred mm:", explanation["predicted_rainfall_mm"])
-    print("Temporal Attention (24h):", len(explanation["temporal_attention"]), "steps")
-    print("Feature Importance (%):", explanation["feature_importance"])
+    print("Test Output Pred mm:", explanation["predicted_rainfall_mm"])
