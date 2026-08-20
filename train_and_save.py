@@ -4,7 +4,7 @@ import torch.optim as optim
 from torch.utils.data import TensorDataset, DataLoader
 import pickle
 import os
-from model import EnhancedRainfallLSTM
+from model import INSAT_Rainfall_XAI_LSTM
 
 def main():
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -23,11 +23,11 @@ def main():
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
     val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
     
-    model = EnhancedRainfallLSTM(actual_input_size=11, legacy_input_size=11, hidden_size=64, num_layers=2, dropout=0.2).to(device)
+    model = INSAT_Rainfall_XAI_LSTM(input_size=11, hidden_size=64, num_layers=2, dropout=0.2).to(device)
     optimizer = optim.Adam(model.parameters(), lr=0.002)
     
-    num_epochs = 15
-    print(f"Training EnhancedRainfallLSTM with positive rain sample weighting for {num_epochs} epochs...")
+    num_epochs = 12
+    print(f"Training INSAT_Rainfall_XAI_LSTM with High-Impact positive sample weighting for {num_epochs} epochs...")
     best_val_loss = float('inf')
     
     for epoch in range(num_epochs):
@@ -36,9 +36,9 @@ def main():
         for X_batch, y_batch in train_loader:
             X_batch, y_batch = X_batch.to(device), y_batch.to(device)
             optimizer.zero_grad()
-            outputs = model(X_batch)
+            outputs, _ = model(X_batch)
             
-            # Weighted loss: positive rain instances weighted 20x to counter extreme class imbalance
+            # Positive sample weighting for extreme & heavy rain events
             weights = torch.where(y_batch > 0.005, 25.0, 1.0)
             loss = torch.mean(weights * ((outputs - y_batch) ** 2))
             
@@ -53,7 +53,7 @@ def main():
         with torch.no_grad():
             for X_batch, y_batch in val_loader:
                 X_batch, y_batch = X_batch.to(device), y_batch.to(device)
-                outputs = model(X_batch)
+                outputs, _ = model(X_batch)
                 weights = torch.where(y_batch > 0.005, 25.0, 1.0)
                 loss = torch.mean(weights * ((outputs - y_batch) ** 2))
                 running_val_loss += loss.item() * X_batch.size(0)

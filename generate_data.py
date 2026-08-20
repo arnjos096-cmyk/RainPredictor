@@ -1,126 +1,149 @@
 import pandas as pd
 import numpy as np
 
-def generate_synthetic_weather_data(output_file='synthetic_weather_data.csv'):
+def generate_insat_weather_data(output_file='synthetic_weather_data.csv'):
+    """
+    Generates synthetic 5-year hourly dataset for INSAT-3D/3DR High Impact Rainfall Nowcasting.
+    Features (11 Channels):
+    1. tir1_temp: INSAT-3D Thermal IR 10.8µm Cloud Top Temperature (°C) [-85 to 40]
+    2. wv_channel: INSAT-3DR 6.8µm Upper Tropospheric Water Vapor (%) [0 to 100]
+    3. cloud_top_height: Convective Cloud Vertical Depth (km) [0 to 18]
+    4. cape_index: Convective Available Potential Energy (J/kg) [0 to 5000]
+    5. pressure: Surface Barometric Pressure (hPa) [960 to 1040]
+    6. humidity: Boundary Layer Relative Humidity (%) [0 to 100]
+    7. temperature: Surface Ambient Temperature (°C) [-10 to 50]
+    8. moisture_conv: Horizontal Water Vapor Flux Convergence (g/kg/h) [0 to 15]
+    9. wind_speed: Surface Wind Squall Speed (km/h) [0 to 160]
+    10. wind_shear: 850-200 hPa Deep Layer Shear (m/s) [0 to 40]
+    11. rainfall_mm: Satellite Hydro-Estimator Rain Rate (mm/h) [0 to 150]
+    """
     np.random.seed(42)
     
-    # 5 years, hourly
+    # 5 years, hourly = 43,800 records
     dates = pd.date_range(start='2020-01-01', periods=43800, freq='h')
     n = len(dates)
     
-    # Time variables
     hour_of_day = dates.hour.values
     day_of_year = dates.dayofyear.values
     
-    # 1. Temperature (°C)
-    # Yearly seasonal variation + daily variation + noise
-    # Base temp around 15C, yearly amplitude 10C, daily amplitude 5C
-    yearly_temp = 15 + 10 * np.sin(2 * np.pi * (day_of_year - 80) / 365.25)
-    daily_temp = 5 * np.sin(2 * np.pi * (hour_of_day - 8) / 24)
-    temperature = yearly_temp + daily_temp + np.random.normal(0, 2, n)
+    # Monsoon Seasonality (June to October: Days 150 to 280)
+    monsoon_factor = np.exp(-0.5 * ((day_of_year - 215) / 45.0) ** 2) # Peak in early August
+    diurnal_heating = np.sin(np.pi * (hour_of_day - 6) / 12)
+    diurnal_heating = np.where((hour_of_day >= 6) & (hour_of_day <= 20), diurnal_heating, -0.3)
     
-    # 2. Barometric Pressure (hPa)
-    # Base pressure with yearly seasonality
-    pressure = 1013 + 10 * np.sin(2 * np.pi * day_of_year / 365.25) + np.random.normal(0, 3, n)
+    # Baseline Surface Temperature (°C)
+    base_temp = 24.0 + 8.0 * np.sin(2 * np.pi * (day_of_year - 100) / 365.25) + 5.0 * diurnal_heating
+    temperature = base_temp + np.random.normal(0, 1.5, n)
+    temperature = np.clip(temperature, -5.0, 48.0)
     
-    # Create a smoothed random walk to represent broad weather fronts (storms)
-    # A larger window (24 hours) makes weather systems last realistically long
-    storm_front = np.convolve(np.random.normal(0, 1, n), np.ones(24)/24, mode='same')
+    # Synoptic Pressure (hPa) - Low in monsoon & cyclonic depressions
+    synoptic_pressure = 1012.0 - 10.0 * monsoon_factor + np.random.normal(0, 2.5, n)
+    # Diurnal semi-diurnal atmospheric tidal wave
+    pressure = synoptic_pressure + 1.2 * np.cos(4 * np.pi * hour_of_day / 24)
     
-    # Physical Correlation 1: Pressure drops significantly when a storm front moves in
-    pressure -= storm_front * 8
+    # CAPE Instability (J/kg) - Spikes with afternoon heating and monsoon moisture
+    base_cape = 400.0 + 2200.0 * monsoon_factor + 600.0 * np.maximum(0, diurnal_heating)
+    cape_index = np.clip(base_cape + np.random.exponential(400, n), 50.0, 4800.0)
     
-    # 3. Cloud Cover (0-100%)
-    # Clouds increase with the storm front
-    cloud_cover = 30 + storm_front * 40 + np.random.normal(0, 10, n)
-    cloud_cover = np.clip(cloud_cover, 0, 100)
+    # Boundary Layer Humidity (%)
+    humidity = 45.0 + 45.0 * monsoon_factor - 0.4 * (temperature - 25.0) + np.random.normal(0, 5, n)
+    humidity = np.clip(humidity, 15.0, 99.0)
     
-    # 4. Relative Humidity (%)
-    # Physical Correlation 2: Humidity correlates with cloud cover and inversely with temperature
-    humidity = 60 - 0.5 * temperature + 0.4 * cloud_cover + np.random.normal(0, 5, n)
-    humidity += storm_front * 15  # Humidity spikes during storms
-    humidity = np.clip(humidity, 10, 100)
+    # Moisture Flux Convergence (g/kg/h)
+    moisture_conv = np.maximum(0.1, 1.5 + 5.5 * monsoon_factor + np.random.normal(0, 1.0, n))
     
-    # 5. Rain Generation (Fixing Zero-Inflation)
-    # Rain happens when humidity is high, pressure is low, AND the storm front is active
-    # By tuning these thresholds, we can target ~15% rainy hours instead of 1.7%
-    is_raining = (humidity > 75) & (pressure < 1012) & (storm_front > 0.2)
+    # Vertical Wind Shear (m/s)
+    wind_shear = np.clip(8.0 + 10.0 * monsoon_factor + np.random.normal(0, 3.0, n), 2.0, 38.0)
     
-    # Add random scattered showers (2% chance) to prevent perfect deterministic predictability
-    scattered_showers = np.random.random(n) < 0.02
-    is_raining = is_raining | scattered_showers
+    # Wind Speed (km/h)
+    wind_speed = np.clip(12.0 + 8.0 * monsoon_factor + np.random.exponential(10, n), 2.0, 140.0)
     
-    # Generate Rainfall Volume
+    # Convective Cell Activity Index (Smoothed cluster for storms)
+    storm_noise = np.random.normal(0, 1, n)
+    storm_wave = np.convolve(storm_noise, np.ones(10)/10.0, mode='same')
+    
+    convective_trigger = (monsoon_factor * 0.5) + (cape_index / 5000.0 * 0.4) + (moisture_conv / 15.0 * 0.3) + (storm_wave * 0.3)
+    is_convective_storm = convective_trigger > 0.65
+    is_extreme_cloudburst = (convective_trigger > 0.90) & (cape_index > 2800) & (moisture_conv > 7.0)
+    is_moderate_rain = (convective_trigger > 0.45) & (~is_convective_storm)
+    
+    # Satellite Channels:
+    # 1. TIR-1 Brightness Temperature (°C) - Very cold in convective storm cores
+    tir1_temp = np.zeros(n)
+    # Default fair weather cloud top temp (or ground surface temp when clear)
+    tir1_temp[~is_convective_storm & ~is_moderate_rain] = 12.0 - 0.3 * temperature[~is_convective_storm & ~is_moderate_rain] + np.random.normal(0, 5, np.sum(~is_convective_storm & ~is_moderate_rain))
+    # Moderate clouds
+    tir1_temp[is_moderate_rain] = np.random.uniform(-35.0, -10.0, np.sum(is_moderate_rain))
+    # Convective storm clouds
+    tir1_temp[is_convective_storm] = np.random.uniform(-65.0, -40.0, np.sum(is_convective_storm))
+    # Extreme Cloudburst deep convective towers
+    tir1_temp[is_extreme_cloudburst] = np.random.uniform(-82.0, -66.0, np.sum(is_extreme_cloudburst))
+    tir1_temp = np.clip(tir1_temp, -85.0, 38.0)
+    
+    # 2. Water Vapor 6.8µm Channel (%)
+    wv_channel = np.clip(30.0 + 50.0 * monsoon_factor + (humidity * 0.2) + np.random.normal(0, 6, n), 10.0, 99.0)
+    wv_channel[is_convective_storm] = np.random.uniform(85.0, 99.0, np.sum(is_convective_storm))
+    
+    # 3. Cloud Top Height (km)
+    cloud_top_height = np.zeros(n)
+    cloud_top_height[~is_convective_storm & ~is_moderate_rain] = np.random.uniform(0.5, 4.0, np.sum(~is_convective_storm & ~is_moderate_rain))
+    cloud_top_height[is_moderate_rain] = np.random.uniform(5.0, 10.0, np.sum(is_moderate_rain))
+    cloud_top_height[is_convective_storm] = np.random.uniform(11.0, 15.5, np.sum(is_convective_storm))
+    cloud_top_height[is_extreme_cloudburst] = np.random.uniform(15.0, 17.8, np.sum(is_extreme_cloudburst))
+    
+    # Adjust pressure, moisture conv, wind speed during storms
+    pressure[is_convective_storm] -= np.random.uniform(4.0, 12.0, np.sum(is_convective_storm))
+    pressure[is_extreme_cloudburst] -= np.random.uniform(8.0, 20.0, np.sum(is_extreme_cloudburst))
+    moisture_conv[is_convective_storm] += np.random.uniform(3.0, 7.0, np.sum(is_convective_storm))
+    moisture_conv[is_extreme_cloudburst] += np.random.uniform(6.0, 10.0, np.sum(is_extreme_cloudburst))
+    wind_speed[is_convective_storm] += np.random.uniform(15.0, 45.0, np.sum(is_convective_storm))
+    humidity[is_convective_storm] = np.random.uniform(88.0, 99.0, np.sum(is_convective_storm))
+    
+    # Synthetic Rainfall Rate (mm/h)
     rainfall_mm = np.zeros(n)
+    # Light/Moderate rain
+    rainfall_mm[is_moderate_rain] = np.random.exponential(3.5, np.sum(is_moderate_rain))
+    # Heavy convective rain (15-50 mm/h)
+    rainfall_mm[is_convective_storm] = np.random.uniform(15.0, 48.0, np.sum(is_convective_storm)) + np.random.exponential(6.0, np.sum(is_convective_storm))
+    # Extreme Cloudbursts (50-130 mm/h)
+    rainfall_mm[is_extreme_cloudburst] = np.random.uniform(55.0, 115.0, np.sum(is_extreme_cloudburst)) + np.random.exponential(12.0, np.sum(is_extreme_cloudburst))
+    rainfall_mm = np.clip(rainfall_mm, 0.0, 150.0)
     
-    # Physical Correlation 3: Rain intensity is driven by how low the pressure drops
-    # The lower the pressure, the higher the exponential scale (heavier rain)
-    intensity_scale = np.clip((1015 - pressure) * 0.5, 0.5, 10.0)
+    # Add False Alarm / Cirrus Anvil Overhang Case (cold clouds without rain)
+    # In 2% of dry hours, set tir1_temp cold (-55°C) but low humidity and 0 moisture conv, 0 rain
+    cirrus_mask = (~is_convective_storm & ~is_moderate_rain) & (np.random.uniform(0, 1, n) < 0.02)
+    tir1_temp[cirrus_mask] = np.random.uniform(-65.0, -48.0, np.sum(cirrus_mask))
+    cloud_top_height[cirrus_mask] = np.random.uniform(12.0, 14.5, np.sum(cirrus_mask))
+    humidity[cirrus_mask] = np.random.uniform(25.0, 55.0, np.sum(cirrus_mask))
+    moisture_conv[cirrus_mask] = np.random.uniform(0.1, 1.2, np.sum(cirrus_mask))
+    rainfall_mm[cirrus_mask] = 0.0
     
-    # Apply exponential distribution so most rain is light, but extremes can happen
-    rainfall_mm[is_raining] = np.random.exponential(scale=intensity_scale[is_raining])
-    
-    # 6. Wind Speed (km/h)
-    # Higher during storms (low pressure)
-    wind_speed = np.random.lognormal(mean=2, sigma=0.5, size=n)
-    wind_speed[is_raining] += np.random.uniform(5, 20, np.sum(is_raining))
-    wind_speed = np.clip(wind_speed, 0, 150)
-    
-    # 6. Wind Direction (degrees)
-    # Random walk mostly
-    wind_dir = (np.cumsum(np.random.normal(0, 10, n)) % 360)
-    
-    # 7. Soil Moisture (%)
-    # Spikes after rain, decays exponentially
-    soil_moisture = np.zeros(n)
-    current_moisture = 20.0
-    for i in range(n):
-        if rainfall_mm[i] > 0:
-            current_moisture = min(100.0, current_moisture + rainfall_mm[i] * 5)
-        else:
-            current_moisture = max(10.0, current_moisture * 0.995) # decay
-        soil_moisture[i] = current_moisture
-        
-    # 8. Solar Radiation (W/m²)
-    # Depends on time of day and cloud cover
-    # Peaks around solar noon (12:00)
-    solar_rad = np.zeros(n)
-    daylight = (hour_of_day > 6) & (hour_of_day < 18)
-    solar_rad[daylight] = 800 * np.sin(np.pi * (hour_of_day[daylight] - 6) / 12)
-    # Reduce by cloud cover
-    solar_rad = solar_rad * (1 - 0.7 * (cloud_cover / 100))
-    solar_rad = np.clip(solar_rad + np.random.normal(0, 10, n), 0, 1200)
-    solar_rad[~daylight] = 0
-    
-    # 9. Dew Point (°C)
-    # Approximation formula based on temp and humidity
-    dew_point = temperature - ((100 - humidity) / 5.0)
-    
-    # 10. Evapotranspiration Rate (mm/hr)
-    # Depends on solar radiation, temperature, and inversely on humidity
-    evapo = (solar_rad * 0.001) + (np.maximum(0, temperature) * 0.01) - (humidity * 0.001)
-    evapo = np.clip(evapo + np.random.normal(0, 0.05, n), 0, 2)
-    evapo[~daylight] = 0
-    
-    # Compile dataset
+    # Construct DataFrame with exactly the 11 INSAT features
     df = pd.DataFrame({
         'date': dates,
-        'temperature': temperature,
-        'humidity': humidity,
-        'pressure': pressure,
-        'wind_speed': wind_speed,
-        'wind_direction': wind_dir,
-        'soil_moisture': soil_moisture,
-        'solar_radiation': solar_rad,
-        'cloud_cover': cloud_cover,
-        'dew_point': dew_point,
-        'evapotranspiration': evapo,
-        'rainfall_mm': rainfall_mm
+        'tir1_temp': np.round(tir1_temp, 2),
+        'wv_channel': np.round(wv_channel, 2),
+        'cloud_top_height': np.round(cloud_top_height, 2),
+        'cape_index': np.round(cape_index, 1),
+        'pressure': np.round(pressure, 2),
+        'humidity': np.round(humidity, 2),
+        'temperature': np.round(temperature, 2),
+        'moisture_conv': np.round(moisture_conv, 2),
+        'wind_speed': np.round(wind_speed, 2),
+        'wind_shear': np.round(wind_shear, 2),
+        'rainfall_mm': np.round(rainfall_mm, 2)
     })
     
     df.set_index('date', inplace=True)
     df.to_csv(output_file)
-    print(f"Generated {n} rows of synthetic weather data and saved to {output_file}")
+    print(f"Generated {n} records of INSAT-3D/3DR satellite & meteorological data -> {output_file}")
+    print("Rainfall statistics:")
+    print(f"  Dry hours: {np.sum(rainfall_mm < 0.1)} ({np.mean(rainfall_mm < 0.1)*100:.1f}%)")
+    print(f"  Light (<7.6 mm): {np.sum((rainfall_mm >= 0.1) & (rainfall_mm < 7.6))}")
+    print(f"  Moderate (7.6-35.6 mm): {np.sum((rainfall_mm >= 7.6) & (rainfall_mm < 35.6))}")
+    print(f"  Heavy (35.6-64.5 mm): {np.sum((rainfall_mm >= 35.6) & (rainfall_mm < 64.5))}")
+    print(f"  Extreme / Cloudburst (>64.5 mm): {np.sum(rainfall_mm >= 64.5)}")
 
 if __name__ == '__main__':
-    generate_synthetic_weather_data()
+    generate_insat_weather_data()
+

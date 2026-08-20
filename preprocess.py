@@ -5,11 +5,25 @@ from sklearn.preprocessing import MinMaxScaler
 import pickle
 import os
 
-def create_sequences(data, target_col_idx, seq_length=24):
+INSAT_FEATURE_COLS = [
+    'tir1_temp',
+    'wv_channel',
+    'cloud_top_height',
+    'cape_index',
+    'pressure',
+    'humidity',
+    'temperature',
+    'moisture_conv',
+    'wind_speed',
+    'wind_shear',
+    'rainfall_mm'
+]
+
+def create_sequences(data, target_col_idx=10, seq_length=24):
     """
-    Creates sequences of length seq_length to predict the next time step's target.
-    data: np.array of shape (num_samples, num_features)
-    target_col_idx: the index of the column we want to predict
+    Creates sliding sequences of 24 hourly steps to predict the next time step's rainfall rate.
+    data: np.array of shape (num_samples, 11)
+    target_col_idx: index 10 (rainfall_mm)
     """
     xs, ys = [], []
     for i in range(len(data) - seq_length):
@@ -20,41 +34,26 @@ def create_sequences(data, target_col_idx, seq_length=24):
     return np.array(xs), np.array(ys)
 
 def preprocess_data(input_file='synthetic_weather_data.csv', seq_length=24):
-    print(f"Loading data from {input_file}...")
+    print(f"Loading INSAT satellite dataset from {input_file}...")
     if not os.path.exists(input_file):
         raise FileNotFoundError(f"{input_file} not found. Please run generate_data.py first.")
         
     df = pd.read_csv(input_file, index_col='date', parse_dates=True)
     
-    # 1. Temporal Embeddings
-    df['hour_sin'] = np.sin(2 * np.pi * df.index.hour / 24.0)
-    df['hour_cos'] = np.cos(2 * np.pi * df.index.hour / 24.0)
-    
-    days_in_year = 365.25
-    df['day_sin'] = np.sin(2 * np.pi * df.index.dayofyear / days_in_year)
-    df['day_cos'] = np.cos(2 * np.pi * df.index.dayofyear / days_in_year)
-    
-    # 2. Rolling Averages (Trend Momentum)
-    df['pressure_roll_3'] = df['pressure'].rolling(window=3).mean().bfill()
-    df['pressure_roll_6'] = df['pressure'].rolling(window=6).mean().bfill()
-    df['humidity_roll_3'] = df['humidity'].rolling(window=3).mean().bfill()
-    df['humidity_roll_6'] = df['humidity'].rolling(window=6).mean().bfill()
-
-    # Move target column to the end for easier indexing
-    target_col = 'rainfall_mm'
-    features = [c for c in df.columns if c != target_col] + [target_col]
-    df = df[features]
-    target_col_idx = len(features) - 1
+    # Ensure columns match standard INSAT feature ordering
+    df = df[INSAT_FEATURE_COLS]
+    target_col_idx = INSAT_FEATURE_COLS.index('rainfall_mm')
     
     # Scale data
-    print("Scaling data...")
+    print("Fitting MinMaxScaler across 11 INSAT channels...")
     scaler = MinMaxScaler()
     scaled_data = scaler.fit_transform(df)
     
     with open('scaler.pkl', 'wb') as f:
         pickle.dump(scaler, f)
+    print("Saved scaler.pkl successfully.")
         
-    print(f"Creating sliding windows of length {seq_length}...")
+    print(f"Creating 24-hour sliding windows (seq_length={seq_length})...")
     X, y = create_sequences(scaled_data, target_col_idx, seq_length)
     
     # Train / Validation Split (80% / 20%)
@@ -80,7 +79,8 @@ def preprocess_data(input_file='synthetic_weather_data.csv', seq_length=24):
     
     print(f"Train shapes: X={X_train_tensor.shape}, y={y_train_tensor.shape}")
     print(f"Val shapes: X={X_val_tensor.shape}, y={y_val_tensor.shape}")
-    print("Preprocessing complete!")
+    print("INSAT Data Preprocessing complete!")
 
 if __name__ == '__main__':
     preprocess_data()
+

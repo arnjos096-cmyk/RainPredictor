@@ -1,84 +1,115 @@
 import torch
 import torch.nn as nn
+import numpy as np
 
-class Attention(nn.Module):
+class TemporalAttention(nn.Module):
+    """
+    Temporal Self-Attention mechanism that calculates importance weights for each hourly timestep.
+    Provides temporal explainability (XAI) by revealing which past hours triggered the prediction.
+    """
     def __init__(self, hidden_size):
-        super(Attention, self).__init__()
-        self.attention = nn.Linear(hidden_size, 1, bias=False)
+        super(TemporalAttention, self).__init__()
+        self.attention = nn.Sequential(
+            nn.Linear(hidden_size, hidden_size // 2),
+            nn.Tanh(),
+            nn.Linear(hidden_size // 2, 1, bias=False)
+        )
 
     def forward(self, lstm_out):
-        # Calculate attention scores for each time step
+        # lstm_out shape: (batch, seq_len, hidden_size)
         attn_scores = self.attention(lstm_out) # (batch, seq_len, 1)
-        attn_weights = torch.softmax(attn_scores, dim=1) 
-        
-        # Multiply weights by LSTM output to get the context vector
+        attn_weights = torch.softmax(attn_scores, dim=1) # (batch, seq_len, 1)
         context_vector = torch.sum(attn_weights * lstm_out, dim=1) # (batch, hidden_size)
-        return context_vector, attn_weights
+        return context_vector, attn_weights.squeeze(-1) # (batch, hidden_size), (batch, seq_len)
 
-class EnhancedRainfallLSTM(nn.Module):
-    def __init__(self, actual_input_size=11, legacy_input_size=11, hidden_size=64, num_layers=2, dropout=0.2):
-        super(EnhancedRainfallLSTM, self).__init__()
-        self.actual_input_size = actual_input_size
-        self.legacy_input_size = legacy_input_size
+
+class INSAT_Rainfall_XAI_LSTM(nn.Module):
+    """
+    ISRO SIH260006 Explainable AI Model for High-Impact Rainfall Nowcasting using INSAT-3D/3DR Satellite Data.
+    Features:
+    - Dynamic feature projection layer supporting 11 INSAT/meteorological channels
+    - Bidirectional LSTM for synoptic temporal feature extraction
+    - Temporal Attention for hourly timeline explainability
+    - Feature Attribution module for XAI predictor ranking
+    """
+    def __init__(self, input_size=11, hidden_size=64, num_layers=2, dropout=0.2):
+        super(INSAT_Rainfall_XAI_LSTM, self).__init__()
+        self.input_size = input_size
+        self.hidden_size = hidden_size
+        self.num_layers = num_layers
         
-        if actual_input_size != legacy_input_size:
-            self.feature_proj = nn.Linear(actual_input_size, legacy_input_size)
-        else:
-            self.feature_proj = nn.Identity()
-            
-        # Upgrade to BiLSTM
-        self.lstm = nn.LSTM(legacy_input_size, hidden_size, num_layers, 
-                            batch_first=True, dropout=dropout if num_layers > 1 else 0,
-                            bidirectional=True)
+        # BiLSTM feature extraction
+        self.lstm = nn.LSTM(
+            input_size, 
+            hidden_size, 
+            num_layers, 
+            batch_first=True, 
+            dropout=dropout if num_layers > 1 else 0,
+            bidirectional=True
+        )
         
-        # Attention on top of BiLSTM (hidden_size * 2 because it's bidirectional)
-        self.attention = Attention(hidden_size * 2)
+        # Temporal attention over BiLSTM bidirectional hidden state (hidden_size * 2)
+        self.attention = TemporalAttention(hidden_size * 2)
         self.dropout = nn.Dropout(dropout)
+        
+        # Output Regression Head (Predicts precipitation rate mm/hr)
         self.fc = nn.Linear(hidden_size * 2, 1)
         
     def forward(self, x):
-        # 1. Project to original shape dimension if needed
-        if isinstance(self.feature_proj, nn.Linear) and x.size(-1) == self.feature_proj.in_features:
-            x = self.feature_proj(x)
-        
-        # 2. BiLSTM extraction
+        # x shape: (batch, seq_len, input_size)
         out, _ = self.lstm(x)
-        
-        # 3. Attention mechanism
         context, attn_weights = self.attention(out)
-        
-        # 4. Final prediction
         out = self.dropout(context)
         out = self.fc(out)
-        return torch.relu(out)
+        return torch.relu(out), attn_weights
 
-
-class RainfallLSTM(nn.Module):
-    def __init__(self, input_size=11, hidden_size=64, num_layers=2, dropout=0.2):
-        super(RainfallLSTM, self).__init__()
-        self.hidden_size = hidden_size
-        self.num_layers = num_layers
-        self.lstm = nn.LSTM(input_size, hidden_size, num_layers, 
-                            batch_first=True, dropout=dropout if num_layers > 1 else 0)
-        self.dropout = nn.Dropout(dropout)
-        self.fc = nn.Linear(hidden_size, 1)
+    def explain_instance(self, x_single_tensor, feature_names=None):
+        """
+        XAI Explainability Function:
+        Computes both Temporal Attention Weights and Feature Attribution Scores.
+        """
+        self.eval()
+        x = x_single_tensor.clone().detach().requires_grad_(True)
+        if x.dim() == 2:
+            x = x.unsqueeze(0) # (1, 24, 11)
+            
+        pred, attn_weights = self.forward(x)
         
-    def forward(self, x):
-        h0 = torch.zeros(self.num_layers, x.size(0), self.hidden_size).to(x.device)
-        c0 = torch.zeros(self.num_layers, x.size(0), self.hidden_size).to(x.device)
-        out, _ = self.lstm(x, (h0, c0))
-        out = self.dropout(out[:, -1, :])
-        out = self.fc(out)
-        return torch.relu(out)
+        # Integrated / Saliency Gradient for Feature Attribution
+        pred.backward()
+        gradients = x.grad.data.abs() # (1, 24, 11)
+        
+        # Temporal attention array across 24 hours
+        temporal_importance = attn_weights.detach().cpu().numpy()[0] # (24,)
+        
+        # Feature importance: weight gradient by attention across timesteps
+        weighted_grads = gradients[0].cpu().numpy() * temporal_importance[:, None]
+        feature_importance_raw = np.sum(weighted_grads, axis=0) # (11,)
+        
+        # Normalize to percentage sum = 100
+        total_sum = np.sum(feature_importance_raw)
+        if total_sum > 0:
+            feature_importance_pct = (feature_importance_raw / total_sum) * 100.0
+        else:
+            feature_importance_pct = np.ones(self.input_size) * (100.0 / self.input_size)
+            
+        return {
+            "predicted_rainfall_mm": float(pred.item()),
+            "temporal_attention": [round(float(w), 4) for w in temporal_importance],
+            "feature_importance": [round(float(pct), 2) for pct in feature_importance_pct]
+        }
+
+# Aliases for backward compatibility
+EnhancedRainfallLSTM = INSAT_Rainfall_XAI_LSTM
+RainfallLSTM = INSAT_Rainfall_XAI_LSTM
 
 if __name__ == '__main__':
-    # Test instantiation
-    model = EnhancedRainfallLSTM()
-    print("Enhanced model architecture:")
+    model = INSAT_Rainfall_XAI_LSTM()
+    print("ISRO INSAT-3D/3DR XAI Architecture Initialized:")
     print(model)
-    
-    # Test with dummy data
-    dummy_input = torch.randn(32, 24, 19)
-    dummy_output = model(dummy_input)
-    print(f"Output shape: {dummy_output.shape}")
-
+    dummy_x = torch.randn(1, 24, 11)
+    explanation = model.explain_instance(dummy_x)
+    print("Test Explanation Output:")
+    print("Pred mm:", explanation["predicted_rainfall_mm"])
+    print("Temporal Attention (24h):", len(explanation["temporal_attention"]), "steps")
+    print("Feature Importance (%):", explanation["feature_importance"])
