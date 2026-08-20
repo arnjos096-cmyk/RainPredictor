@@ -172,6 +172,7 @@ body {
     display: flex;
     align-items: center;
     gap: 8px;
+    flex-wrap: wrap;
 }
 
 .telemetry-pill {
@@ -218,13 +219,14 @@ body {
     border: 1px solid var(--border-subtle);
     border-radius: var(--radius-sm);
     gap: 2px;
+    flex-wrap: wrap;
 }
 
 .mode-btn {
     background: transparent;
     border: none;
     color: var(--text-secondary);
-    padding: 7px 13px;
+    padding: 7px 12px;
     font-size: 0.78rem;
     font-weight: 500;
     font-family: var(--font-sans);
@@ -234,6 +236,7 @@ body {
     align-items: center;
     gap: 6px;
     transition: var(--transition-fast);
+    white-space: nowrap;
 }
 
 .mode-btn:hover {
@@ -459,6 +462,8 @@ body {
     justify-content: space-between;
     border-bottom: 1px solid var(--border-subtle);
     padding-bottom: 12px;
+    flex-wrap: wrap;
+    gap: 10px;
 }
 
 .panel-title {
@@ -853,6 +858,44 @@ body {
     transition: width 0.3s ease;
 }
 
+/* --------------------------------------------------------------------------
+   6B. DQN Autonomous Decision Advisory Card (Quick View)
+   -------------------------------------------------------------------------- */
+.dqn-advisory-card {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    padding: 14px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.dqn-quick-advisory {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    background: var(--bg-card-inner);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-sm);
+    padding: 10px 12px;
+}
+
+.dqn-quick-badge {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.84rem;
+    font-weight: 700;
+    color: var(--alert-red);
+}
+
+.dqn-quick-desc {
+    font-size: 0.74rem;
+    color: var(--text-secondary);
+    line-height: 1.35;
+}
+
 /* 12-Hour Forward Horizon Card */
 .forecast-chart-card, .insights-card {
     background: var(--bg-surface);
@@ -1009,12 +1052,25 @@ body {
     position: relative;
 }
 
+.attention-summary-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-family: var(--font-mono);
+    font-size: 0.74rem;
+    background: var(--bg-card-inner);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-sm);
+    padding: 6px 10px;
+    color: var(--text-primary);
+}
+
 /* Feature Attribution Waterfall Bars */
 .feature-attribution-bars {
     display: flex;
     flex-direction: column;
     gap: 6px;
-    max-height: 200px;
+    max-height: 220px;
     overflow-y: auto;
     padding-right: 4px;
 }
@@ -1148,7 +1204,402 @@ body {
 }
 
 /* --------------------------------------------------------------------------
-   8. Benchmarks & Meteorological Accuracy Matrix
+   8. Dedicated DQN Reinforcement Learning Section
+   -------------------------------------------------------------------------- */
+.rl-section {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    padding: 18px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.rl-badge-status {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-family: var(--font-mono);
+    font-size: 0.74rem;
+    background: var(--bg-card-inner);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-sm);
+    padding: 5px 10px;
+    color: var(--text-secondary);
+}
+
+.rl-badge-status strong {
+    color: var(--alert-green);
+}
+
+.rl-grid {
+    display: grid;
+    grid-template-columns: 1.2fr 1fr;
+    gap: 14px;
+}
+
+@media (max-width: 950px) {
+    .rl-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.rl-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    padding: 16px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.rl-policy-tag {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    font-weight: 700;
+    padding: 2px 7px;
+    background: rgba(56, 189, 248, 0.15);
+    color: var(--isro-blue);
+    border: 1px solid rgba(56, 189, 248, 0.35);
+    border-radius: var(--radius-sm);
+}
+
+.rl-action-display {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    background: var(--bg-card-inner);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-sm);
+    padding: 14px 16px;
+}
+
+.rl-action-icon-circle {
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    background: rgba(239, 68, 68, 0.18);
+    border: 2px solid var(--alert-red);
+    color: var(--alert-red);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    flex-shrink: 0;
+}
+
+.rl-action-code {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: var(--alert-red);
+    letter-spacing: 0.5px;
+}
+
+.rl-action-title {
+    font-family: var(--font-heading);
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin: 2px 0;
+}
+
+.rl-action-desc {
+    font-size: 0.78rem;
+    color: var(--text-secondary);
+}
+
+.rl-rationale-box {
+    background: var(--bg-card-inner);
+    border: 1px solid var(--border-subtle);
+    border-left: 3px solid var(--alert-yellow);
+    border-radius: var(--radius-sm);
+    padding: 10px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.rationale-header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.76rem;
+    color: var(--text-primary);
+}
+
+.rl-rationale-box p {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    line-height: 1.4;
+}
+
+/* Q-Values Distribution Bars */
+.q-values-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.q-val-item {
+    background: var(--bg-card-inner);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-sm);
+    padding: 8px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.q-val-item.active-q-item {
+    border-color: var(--isro-blue);
+    background: var(--bg-surface-elevated);
+}
+
+.q-item-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.75rem;
+}
+
+.q-item-name {
+    font-weight: 600;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.q-item-val {
+    font-family: var(--font-mono);
+    font-weight: 700;
+    color: var(--isro-blue);
+}
+
+.q-item-track {
+    height: 5px;
+    background: #162440;
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+.q-item-fill {
+    height: 100%;
+    background: var(--isro-blue);
+    border-radius: 2px;
+    transition: width 0.3s ease;
+}
+
+/* MDP Actions Matrix Grid */
+.rl-env-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    padding: 16px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.rl-actions-matrix-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 10px;
+}
+
+.matrix-item {
+    background: var(--bg-card-inner);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-sm);
+    padding: 10px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.matrix-item-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.matrix-code {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: var(--text-muted);
+}
+
+.matrix-badge {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    font-weight: 700;
+    padding: 1px 6px;
+    border-radius: var(--radius-sm);
+}
+
+.bg-green { background: rgba(16, 185, 129, 0.2); color: var(--alert-green); border: 1px solid rgba(16, 185, 129, 0.4); }
+.bg-blue { background: rgba(56, 189, 248, 0.2); color: var(--isro-blue); border: 1px solid rgba(56, 189, 248, 0.4); }
+.bg-amber { background: rgba(234, 179, 8, 0.2); color: var(--alert-yellow); border: 1px solid rgba(234, 179, 8, 0.4); }
+.bg-red { background: rgba(239, 68, 68, 0.2); color: var(--alert-red); border: 1px solid rgba(239, 68, 68, 0.4); }
+
+.matrix-desc {
+    font-size: 0.74rem;
+    color: var(--text-secondary);
+    line-height: 1.35;
+}
+
+/* --------------------------------------------------------------------------
+   9. Dedicated Historical Dataset Replay Section
+   -------------------------------------------------------------------------- */
+.historical-section {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    padding: 18px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.historical-controls-strip {
+    display: flex;
+    gap: 6px;
+}
+
+.historical-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+}
+
+@media (max-width: 900px) {
+    .historical-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.hist-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    padding: 16px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.hist-meta-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.75rem;
+    font-family: var(--font-mono);
+    background: var(--bg-card-inner);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-sm);
+    padding: 8px 10px;
+}
+
+.hist-slider-box {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.hist-slider-box label {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}
+
+.btn-primary-run {
+    background: linear-gradient(135deg, #0284c7, #0369a1);
+    color: #ffffff;
+    border: 1px solid rgba(56, 189, 248, 0.4);
+    border-radius: var(--radius-sm);
+    padding: 10px 14px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    font-family: var(--font-sans);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: var(--transition-fast);
+}
+
+.btn-primary-run:hover {
+    background: linear-gradient(135deg, #0369a1, #075985);
+    box-shadow: 0 0 12px rgba(56, 189, 248, 0.35);
+}
+
+.hist-comparison-display {
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    background: var(--bg-card-inner);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-sm);
+    padding: 14px 16px;
+}
+
+.comp-box {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+}
+
+.comp-label {
+    font-size: 0.72rem;
+    color: var(--text-muted);
+}
+
+.comp-val {
+    font-family: var(--font-mono);
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.comp-val .unit {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}
+
+.actual-box .comp-val { color: var(--isro-blue); }
+.pred-box .comp-val { color: var(--isro-saffron); }
+
+.comp-tag {
+    font-family: var(--font-mono);
+    font-size: 0.66rem;
+    color: var(--text-muted);
+}
+
+.comp-vs {
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--text-muted);
+}
+
+.hist-residual-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    background: var(--bg-card-inner);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-sm);
+    padding: 8px 10px;
+}
+
+/* --------------------------------------------------------------------------
+   10. Dedicated Benchmarks & Meteorological Accuracy Matrix
    -------------------------------------------------------------------------- */
 .benchmarks-section {
     background: var(--bg-surface);
@@ -1244,8 +1695,50 @@ body {
     color: var(--alert-red) !important;
 }
 
+.table-total-row td {
+    background: var(--bg-card-inner);
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.metrics-glossary-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    padding: 14px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.glossary-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+}
+
+@media (max-width: 800px) {
+    .glossary-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.glossary-item {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    background: var(--bg-card-inner);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-sm);
+    padding: 8px 10px;
+    line-height: 1.35;
+}
+
+.glossary-item strong {
+    color: var(--text-primary);
+}
+
 /* --------------------------------------------------------------------------
-   9. Interactive Map Section
+   11. Interactive Map Section
    -------------------------------------------------------------------------- */
 .map-section {
     background: var(--bg-surface);
@@ -1451,7 +1944,7 @@ body {
 }
 
 /* --------------------------------------------------------------------------
-   10. Bottom Synoptic Timeline & Specs Grid
+   12. Bottom Synoptic Timeline & Specs Grid
    -------------------------------------------------------------------------- */
 .bottom-grid {
     display: grid;

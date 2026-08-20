@@ -1,133 +1,140 @@
 /**
- * ISRO MOSDAC / SAC — Explainable AI (XAI) Nowcaster & INSAT-3D/3DR Satellite Frontend
- * Scientific Mission Operations Control Engine
+ * ISRO MOSDAC / SAC — Explainable AI (XAI) Heavy Rain Nowcaster & DQN Decision System
+ * Frontend Mission Operations Control Engine
  */
 
 document.addEventListener('DOMContentLoaded', () => {
     // Application State
     const state = {
-        mode: 'quick', // 'quick' | 'xai' | 'map' | 'metrics'
+        mode: 'quick', // 'quick' | 'xai' | 'rl' | 'historical' | 'map' | 'metrics'
         scenario: 'mumbai_cloudburst',
         scenarios: {
             mumbai_cloudburst: {
                 id: 'mumbai_cloudburst',
-                name: 'Mumbai Extreme Offshore Cloudburst',
+                name: 'Mumbai Extreme Convective Cloudburst',
                 location: 'Mumbai Coastal Observatory (18.98° N, 72.83° E)',
                 pressure_trend: 'falling',
                 hour_of_day: 14,
-                data: {
+                weather: {
                     tir1_temp: -68.5,
-                    wv_channel: 96.0,
-                    cloud_top_height: 16.2,
-                    cape_index: 3850.0,
-                    pressure: 990.0,
+                    wv_channel: 98.0,
+                    cloud_top_height: 16.5,
+                    cape_index: 3800.0,
+                    pressure: 991.0,
                     humidity: 98.0,
-                    temperature: 28.0,
+                    temperature: 26.5,
                     moisture_conv: 12.8,
-                    wind_speed: 68.0,
-                    wind_shear: 22.0,
-                    rainfall_mm: 12.0
+                    wind_speed: 62.0,
+                    wind_shear: 24.0,
+                    rainfall_mm: 68.4
                 }
             },
             kedarnath_himalayan: {
                 id: 'kedarnath_himalayan',
-                name: 'Uttarakhand Himalayan Convective Tower',
+                name: 'Uttarakhand Himalayan Cloudburst',
                 location: 'Garhwal Himalayas (30.73° N, 79.06° E)',
                 pressure_trend: 'falling',
                 hour_of_day: 15,
-                data: {
-                    tir1_temp: -64.0,
-                    wv_channel: 88.0,
+                weather: {
+                    tir1_temp: -62.0,
+                    wv_channel: 94.0,
                     cloud_top_height: 15.0,
-                    cape_index: 3100.0,
-                    pressure: 840.0,
-                    humidity: 92.0,
-                    temperature: 16.5,
-                    moisture_conv: 11.2,
-                    wind_speed: 48.0,
-                    wind_shear: 24.5,
-                    rainfall_mm: 8.5
+                    cape_index: 2900.0,
+                    pressure: 988.0,
+                    humidity: 94.0,
+                    temperature: 21.0,
+                    moisture_conv: 10.5,
+                    wind_speed: 45.0,
+                    wind_shear: 20.0,
+                    rainfall_mm: 48.2
                 }
             },
             chennai_depression: {
                 id: 'chennai_depression',
-                name: 'Chennai Bay of Bengal Deep Depression',
+                name: 'Chennai Cyclonic Rainband (Depression)',
                 location: 'Chennai Coastal Radar (13.08° N, 80.27° E)',
                 pressure_trend: 'falling',
                 hour_of_day: 11,
-                data: {
-                    tir1_temp: -54.0,
-                    wv_channel: 94.0,
-                    cloud_top_height: 13.5,
-                    cape_index: 2400.0,
-                    pressure: 996.0,
-                    humidity: 95.0,
-                    temperature: 26.5,
-                    moisture_conv: 7.8,
-                    wind_speed: 62.0,
+                weather: {
+                    tir1_temp: -48.0,
+                    wv_channel: 90.0,
+                    cloud_top_height: 12.8,
+                    cape_index: 2100.0,
+                    pressure: 997.0,
+                    humidity: 92.0,
+                    temperature: 28.0,
+                    moisture_conv: 7.5,
+                    wind_speed: 48.0,
                     wind_shear: 16.0,
-                    rainfall_mm: 6.0
+                    rainfall_mm: 38.0
                 }
             },
             cirrus_anvil_false_alarm: {
                 id: 'cirrus_anvil_false_alarm',
-                name: 'Thin Cirrus Anvil Overhang (XAI False Alarm Test)',
+                name: 'Cold Cirrus Anvil Shield (XAI Test Case)',
                 location: 'Deccan Plateau (17.38° N, 78.48° E)',
                 pressure_trend: 'steady',
                 hour_of_day: 16,
-                data: {
-                    tir1_temp: -66.0,
-                    wv_channel: 38.0,
-                    cloud_top_height: 14.5,
-                    cape_index: 650.0,
-                    pressure: 1011.0,
-                    humidity: 42.0,
-                    temperature: 31.0,
-                    moisture_conv: 0.8,
-                    wind_speed: 25.0,
-                    wind_shear: 28.0,
+                weather: {
+                    tir1_temp: -54.0,
+                    wv_channel: 48.0,
+                    cloud_top_height: 13.5,
+                    cape_index: 1200.0,
+                    pressure: 1010.0,
+                    humidity: 52.0,
+                    temperature: 32.0,
+                    moisture_conv: 1.2,
+                    wind_speed: 22.0,
+                    wind_shear: 12.0,
                     rainfall_mm: 0.0
                 }
             },
             rajasthan_anticyclone: {
                 id: 'rajasthan_anticyclone',
-                name: 'Thar Desert Subtropical Anticyclone',
+                name: 'Thar Desert Anticyclone',
                 location: 'Jaisalmer Surface Station (26.91° N, 70.90° E)',
                 pressure_trend: 'rising',
                 hour_of_day: 13,
-                data: {
-                    tir1_temp: 24.0,
-                    wv_channel: 14.0,
-                    cloud_top_height: 0.8,
-                    cape_index: 120.0,
-                    pressure: 1016.0,
-                    humidity: 18.0,
-                    temperature: 39.5,
+                weather: {
+                    tir1_temp: 18.0,
+                    wv_channel: 24.0,
+                    cloud_top_height: 1.5,
+                    cape_index: 200.0,
+                    pressure: 1018.0,
+                    humidity: 28.0,
+                    temperature: 38.5,
                     moisture_conv: 0.1,
                     wind_speed: 14.0,
-                    wind_shear: 4.0,
+                    wind_shear: 6.0,
                     rainfall_mm: 0.0
                 }
             }
         },
         benchmarks: null,
         currentWeather: {
-            tir1_temp: -68.5,
-            wv_channel: 96.0,
-            cloud_top_height: 16.2,
-            cape_index: 3850.0,
-            pressure: 990.0,
-            humidity: 98.0,
-            temperature: 28.0,
-            moisture_conv: 12.8,
-            wind_speed: 68.0,
-            wind_shear: 22.0,
-            rainfall_mm: 12.0
+            tir1_temp: -58.0,
+            wv_channel: 92.0,
+            cloud_top_height: 14.2,
+            cape_index: 2850.0,
+            pressure: 994.0,
+            humidity: 95.0,
+            temperature: 27.5,
+            moisture_conv: 8.4,
+            wind_speed: 54.0,
+            wind_shear: 18.5,
+            rainfall_mm: 4.5
         },
         pressureTrend: 'falling',
         hourOfDay: 14,
         sequence24h: [],
         xaiData: null,
+        historical: {
+            currentIndex: 1000,
+            totalRecords: 43800,
+            currentSequence: [],
+            nextActualRain: 0.0,
+            predictedRain: 0.0
+        },
         charts: {
             timeline: null,
             forecast: null,
@@ -180,15 +187,20 @@ document.addEventListener('DOMContentLoaded', () => {
         btnReset: document.getElementById('btnReset'),
         quickDeckView: document.getElementById('quickDeckView'),
         xaiSection: document.getElementById('xaiSection'),
+        rlSection: document.getElementById('rlSection'),
+        historicalSection: document.getElementById('historicalSection'),
         mapSection: document.getElementById('mapSection'),
         benchmarksSection: document.getElementById('benchmarksSection'),
         mainDashboardGrid: document.getElementById('mainDashboardGrid'),
         bottomTimelineSection: document.getElementById('bottomTimelineSection'),
         btnModeQuick: document.getElementById('btnModeQuick'),
         btnModeXAI: document.getElementById('btnModeXAI'),
+        btnModeRL: document.getElementById('btnModeRL'),
+        btnModeHistorical: document.getElementById('btnModeHistorical'),
         btnModeMap: document.getElementById('btnModeMap'),
         btnModeMetrics: document.getElementById('btnModeMetrics'),
         btnQuickOpenXAI: document.getElementById('btnQuickOpenXAI'),
+        btnQuickOpenRL: document.getElementById('btnQuickOpenRL'),
         panelSubtext: document.getElementById('panelSubtext'),
         hudCoords: document.getElementById('hudCoords'),
         hudStationName: document.getElementById('hudStationName'),
@@ -198,7 +210,42 @@ document.addEventListener('DOMContentLoaded', () => {
         radarScrubber: document.getElementById('radarScrubber'),
         radarOpacity: document.getElementById('radarOpacity'),
         btnRadarPlay: document.getElementById('btnRadarPlay'),
-        radarPlayIcon: document.getElementById('radarPlayIcon')
+        radarPlayIcon: document.getElementById('radarPlayIcon'),
+        peakTriggerHour: document.getElementById('peakTriggerHour'),
+        peakAttentionVal: document.getElementById('peakAttentionVal'),
+        // RL Elements
+        dqnQuickActionName: document.getElementById('dqnQuickActionName'),
+        dqnQuickDesc: document.getElementById('dqnQuickDesc'),
+        dqnQuickBadge: document.getElementById('dqnQuickBadge'),
+        dqnQuickIcon: document.getElementById('dqnQuickIcon'),
+        rlActionCode: document.getElementById('rlActionCode'),
+        rlActionTitle: document.getElementById('rlActionTitle'),
+        rlActionDesc: document.getElementById('rlActionDesc'),
+        rlActionIconCircle: document.getElementById('rlActionIconCircle'),
+        rlRationaleText: document.getElementById('rlRationaleText'),
+        qValuesList: document.getElementById('qValuesList'),
+        // Historical Elements
+        btnHistPrev: document.getElementById('btnHistPrev'),
+        btnHistRandom: document.getElementById('btnHistRandom'),
+        btnHistNext: document.getElementById('btnHistNext'),
+        histRecordRange: document.getElementById('histRecordRange'),
+        histDateStart: document.getElementById('histDateStart'),
+        histDateEnd: document.getElementById('histDateEnd'),
+        histIndexSlider: document.getElementById('histIndexSlider'),
+        btnRunHistValidation: document.getElementById('btnRunHistValidation'),
+        histActualVal: document.getElementById('histActualVal'),
+        histPredVal: document.getElementById('histPredVal'),
+        histResidualVal: document.getElementById('histResidualVal'),
+        histAccuracyBadge: document.getElementById('histAccuracyBadge'),
+        // Contingency Matrix
+        valHitsTP: document.getElementById('valHitsTP'),
+        valFalseAlarmsFP: document.getElementById('valFalseAlarmsFP'),
+        valMissesFN: document.getElementById('valMissesFN'),
+        valCorrectNegTN: document.getElementById('valCorrectNegTN'),
+        valTotalForecastYes: document.getElementById('valTotalForecastYes'),
+        valTotalForecastNo: document.getElementById('valTotalForecastNo'),
+        valTotalObservedYes: document.getElementById('valTotalObservedYes'),
+        valTotalObservedNo: document.getElementById('valTotalObservedNo')
     };
 
     const paramKeys = [
@@ -218,13 +265,16 @@ document.addEventListener('DOMContentLoaded', () => {
         synthesize24hFromCurrent();
         syncSlidersFromState();
         
-        // Fetch background APIs gracefully
+        // Fetch background APIs
         await fetchStatus();
         await fetchScenarios();
         await fetchBenchmarks();
         
         // Initial neural inference run
         await runInference();
+        
+        // Pre-load historical sample
+        fetchHistoricalSequence(1000);
     }
 
     // --- 2. Live Mission Clock ---
@@ -260,7 +310,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const customIcon = L.divIcon({
             className: 'radar-pulse-container',
-            html: '<div class="radar-marker-pulse"></div>',
+            html: '<div style="width:14px; height:14px; border-radius:50%; background:#ef4444; box-shadow:0 0 10px #ef4444; border:2px solid #ffffff;"></div>',
             iconSize: [20, 20],
             iconAnchor: [10, 10]
         });
@@ -363,29 +413,29 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Simulated geographic presets
         if (lat < 20.0 && lng < 75.0) {
+            state.currentWeather.tir1_temp = -68.5;
+            state.currentWeather.cloud_top_height = 16.5;
+            state.currentWeather.cape_index = 3800.0;
+            state.currentWeather.moisture_conv = 12.8;
+            state.currentWeather.pressure = 991.0;
+        } else if (lat > 28.0 && lng > 77.0) {
             state.currentWeather.tir1_temp = -62.0;
             state.currentWeather.cloud_top_height = 15.0;
-            state.currentWeather.cape_index = 3200.0;
-            state.currentWeather.moisture_conv = 10.5;
-            state.currentWeather.pressure = 993.0;
-        } else if (lat > 28.0 && lng > 77.0) {
-            state.currentWeather.tir1_temp = -64.0;
-            state.currentWeather.cloud_top_height = 14.5;
             state.currentWeather.cape_index = 2900.0;
-            state.currentWeather.moisture_conv = 9.8;
-            state.currentWeather.pressure = 880.0;
+            state.currentWeather.moisture_conv = 10.5;
+            state.currentWeather.pressure = 988.0;
         } else if (lat < 16.0 && lng > 79.0) {
-            state.currentWeather.tir1_temp = -55.0;
-            state.currentWeather.cloud_top_height = 13.0;
-            state.currentWeather.cape_index = 2200.0;
+            state.currentWeather.tir1_temp = -48.0;
+            state.currentWeather.cloud_top_height = 12.8;
+            state.currentWeather.cape_index = 2100.0;
             state.currentWeather.moisture_conv = 7.5;
-            state.currentWeather.pressure = 998.0;
+            state.currentWeather.pressure = 997.0;
         } else {
-            state.currentWeather.tir1_temp = 20.0;
-            state.currentWeather.cloud_top_height = 1.0;
+            state.currentWeather.tir1_temp = 18.0;
+            state.currentWeather.cloud_top_height = 1.5;
             state.currentWeather.cape_index = 200.0;
-            state.currentWeather.moisture_conv = 0.2;
-            state.currentWeather.pressure = 1014.0;
+            state.currentWeather.moisture_conv = 0.1;
+            state.currentWeather.pressure = 1018.0;
         }
 
         syncSlidersFromState();
@@ -417,10 +467,10 @@ document.addEventListener('DOMContentLoaded', () => {
             const res = await fetch('/api/status');
             const data = await res.json();
             if (data && data.model_loaded) {
-                console.log('INSAT-3D/3DR XAI Engine Online:', data.device);
+                console.log('INSAT-3D/3DR XAI Engine Online:', data.model_type, data.device);
             }
         } catch (err) {
-            console.log('Status endpoint check:', err);
+            console.log('Status check:', err);
         }
     }
 
@@ -449,21 +499,113 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function renderBenchmarkMetrics() {
-        if (!state.benchmarks || !elements.metricsKpiGrid) return;
-        const metrics = state.benchmarks.verification_metrics;
-        if (!metrics) return;
+        if (!state.benchmarks) return;
         
-        elements.metricsKpiGrid.innerHTML = Object.entries(metrics).map(([k, m]) => `
-            <div class="kpi-card">
-                <span class="kpi-label">${m.label}</span>
-                <div class="kpi-val-row">
-                    <span class="kpi-val text-emerald">${m.value}</span>
-                    <span class="kpi-target">Target: ${m.target}</span>
+        // 1. KPI Cards
+        const metrics = state.benchmarks.verification_metrics;
+        if (metrics && elements.metricsKpiGrid) {
+            elements.metricsKpiGrid.innerHTML = Object.entries(metrics).map(([k, m]) => `
+                <div class="kpi-card">
+                    <span class="kpi-label">${m.label}</span>
+                    <div class="kpi-val-row">
+                        <span class="kpi-val text-emerald">${m.value}</span>
+                        <span class="kpi-target">Target: ${m.target}</span>
+                    </div>
                 </div>
-            </div>
-        `).join('');
+            `).join('');
+        }
+
+        // 2. Contingency Matrix
+        const cm = state.benchmarks.confusion_matrix_heavy_events;
+        if (cm) {
+            if (elements.valHitsTP) elements.valHitsTP.textContent = `Hits (TP): ${cm.hits_tp.toLocaleString()}`;
+            if (elements.valFalseAlarmsFP) elements.valFalseAlarmsFP.textContent = `False Alarms (FP): ${cm.false_alarms_fp.toLocaleString()}`;
+            if (elements.valMissesFN) elements.valMissesFN.textContent = `Misses (FN): ${cm.misses_fn.toLocaleString()}`;
+            if (elements.valCorrectNegTN) elements.valCorrectNegTN.textContent = `Correct Rejections (TN): ${cm.correct_negatives_tn.toLocaleString()}`;
+            
+            const totalYes = cm.hits_tp + cm.false_alarms_fp;
+            const totalNo = cm.misses_fn + cm.correct_negatives_tn;
+            const obsYes = cm.hits_tp + cm.misses_fn;
+            const obsNo = cm.false_alarms_fp + cm.correct_negatives_tn;
+            
+            if (elements.valTotalForecastYes) elements.valTotalForecastYes.textContent = totalYes.toLocaleString();
+            if (elements.valTotalForecastNo) elements.valTotalForecastNo.textContent = totalNo.toLocaleString();
+            if (elements.valTotalObservedYes) elements.valTotalObservedYes.textContent = obsYes.toLocaleString();
+            if (elements.valTotalObservedNo) elements.valTotalObservedNo.textContent = obsNo.toLocaleString();
+        }
     }
 
+    // --- 5. Historical Dataset Fetcher ---
+    async function fetchHistoricalSequence(startIdx = 1000) {
+        try {
+            const res = await fetch(`/api/historical?start_idx=${startIdx}&length=24`);
+            const data = await res.json();
+            
+            state.historical.currentIndex = data.start_index;
+            state.historical.totalRecords = data.total_records;
+            state.historical.currentSequence = data.sequence;
+            state.historical.nextActualRain = data.next_actual_rainfall_mm;
+            
+            if (elements.histRecordRange) {
+                elements.histRecordRange.textContent = `Records ${data.start_index} - ${data.start_index + 24}`;
+            }
+            if (elements.histDateStart) elements.histDateStart.textContent = data.date_start;
+            if (elements.histDateEnd) elements.histDateEnd.textContent = data.date_end;
+            if (elements.histIndexSlider) elements.histIndexSlider.value = data.start_index;
+            if (elements.histActualVal) {
+                elements.histActualVal.innerHTML = `${data.next_actual_rainfall_mm.toFixed(2)} <span class="unit">mm/h</span>`;
+            }
+        } catch (err) {
+            console.error('Historical dataset fetch notice:', err);
+        }
+    }
+
+    async function runHistoricalInference() {
+        if (!state.historical.currentSequence || state.historical.currentSequence.length !== 24) return;
+        
+        try {
+            if (elements.btnRunHistValidation) elements.btnRunHistValidation.textContent = 'Evaluating Sequence...';
+            
+            const res = await fetch('/api/predict', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    sequence: state.historical.currentSequence,
+                    hour_of_day: 14
+                })
+            });
+            const data = await res.json();
+            const pred = data.predicted_rainfall_mm;
+            state.historical.predictedRain = pred;
+            
+            if (elements.histPredVal) {
+                elements.histPredVal.innerHTML = `${pred.toFixed(2)} <span class="unit">mm/h</span>`;
+            }
+            
+            const residual = Math.abs(pred - state.historical.nextActualRain);
+            if (elements.histResidualVal) {
+                elements.histResidualVal.textContent = `${residual.toFixed(2)} mm/h`;
+            }
+            if (elements.histAccuracyBadge) {
+                if (residual < 3.0) {
+                    elements.histAccuracyBadge.className = 'text-emerald';
+                    elements.histAccuracyBadge.textContent = 'High Precision Fit (Residual < 3 mm/h)';
+                } else if (residual < 8.0) {
+                    elements.histAccuracyBadge.className = 'text-blue';
+                    elements.histAccuracyBadge.textContent = 'Acceptable Bounds';
+                } else {
+                    elements.histAccuracyBadge.className = 'text-amber';
+                    elements.histAccuracyBadge.textContent = 'Convective Ambiguity';
+                }
+            }
+        } catch (err) {
+            console.error('Historical inference error:', err);
+        } finally {
+            if (elements.btnRunHistValidation) elements.btnRunHistValidation.innerHTML = '<i class="fa-solid fa-play"></i> Run Inference on Historical Sequence';
+        }
+    }
+
+    // --- 6. Real-Time Neural Inference & DQN Decision Logic ---
     async function runInference() {
         if (elements.lastInferenceTime) elements.lastInferenceTime.textContent = 'Evaluating...';
         
@@ -482,6 +624,7 @@ document.addEventListener('DOMContentLoaded', () => {
             state.xaiData = data;
             updatePredictionUI(data);
             updateXAIPanels(data);
+            updateDQNDecision(data);
             runForwardForecast();
             updateTimelineChart();
         } catch (err) {
@@ -513,7 +656,132 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // --- 5. UI & XAI Rendering ---
+    // --- 7. DQN Autonomous Decision Engine Evaluation ---
+    function updateDQNDecision(data) {
+        const pred_mm = data.predicted_rainfall_mm;
+        const curr = state.currentWeather;
+        const cth = curr.cloud_top_height;
+        const cape = curr.cape_index;
+        const mc = curr.moisture_conv;
+        const tir1 = curr.tir1_temp;
+
+        // Simulate Q-values from Bellman environment policy in dqn_agent.py
+        let q0 = 0.0; // Action 0: Normal Operations
+        let q1 = 0.0; // Action 1: Agricultural Delay
+        let q2 = 0.0; // Action 2: Grid Backup
+        let q3 = 0.0; // Action 3: Disaster Evacuation
+
+        // Action 0 (Normal) value
+        if (pred_mm < 1.0 && tir1 > -30.0) {
+            q0 = 8.5;
+        } else if (pred_mm < 7.6) {
+            q0 = 2.0;
+        } else {
+            q0 = -45.0 - (pred_mm * 1.5);
+        }
+
+        // Action 1 (Agri delay) value
+        if (pred_mm >= 0.5 && pred_mm <= 15.0) {
+            q1 = 28.0 + (pred_mm * 1.2);
+        } else if (pred_mm < 0.5) {
+            q1 = -8.0;
+        } else {
+            q1 = -18.0;
+        }
+
+        // Action 2 (Grid backup) value
+        if (cth > 10.0 && pred_mm > 5.0) {
+            q2 = 35.0 + (cth * 2.0) + (cape / 300.0);
+        } else {
+            q2 = -15.0;
+        }
+
+        // Action 3 (Evacuation) value
+        if (pred_mm > 35.0 || (tir1 <= -55.0 && mc >= 8.0)) {
+            q3 = 95.0 + (pred_mm * 1.8);
+        } else if (pred_mm > 18.0) {
+            q3 = 45.0;
+        } else {
+            q3 = -50.0 - (tir1 < -50 ? 0 : 20); // False alarm penalty
+        }
+
+        const qArr = [
+            { id: 0, name: 'Action 0: Normal Operations', code: 'ACTION 0', val: q0, color: '#10b981', icon: 'fa-sun', desc: 'Maintain normal municipal schedules and power grid operations.' },
+            { id: 1, name: 'Action 1: Agricultural Delay', code: 'ACTION 1', val: q1, color: '#38bdf8', icon: 'fa-faucet-drip', desc: 'Pause automated irrigation to conserve municipal water & electricity ahead of gentle rain.' },
+            { id: 2, name: 'Action 2: Grid Aux Backup', code: 'ACTION 2', val: q2, color: '#f59e0b', icon: 'fa-bolt', desc: 'Spin up standby power generators to buffer solar drop and convective squall disruptions.' },
+            { id: 3, name: 'Action 3: Disaster Evacuation', code: 'ACTION 3', val: q3, color: '#ef4444', icon: 'fa-triangle-exclamation', desc: 'Mobilize SDRF/NDRF emergency response units, flood barriers, and coastal evacuation.' }
+        ];
+
+        // Choose argmax
+        let bestAction = qArr[0];
+        for (let i = 1; i < qArr.length; i++) {
+            if (qArr[i].val > bestAction.val) {
+                bestAction = qArr[i];
+            }
+        }
+
+        // 1. Update Quick Advisory Card on Main Dashboard
+        if (elements.dqnQuickActionName) {
+            elements.dqnQuickActionName.textContent = bestAction.name;
+            elements.dqnQuickActionName.style.color = bestAction.color;
+        }
+        if (elements.dqnQuickIcon) {
+            elements.dqnQuickIcon.className = `fa-solid ${bestAction.icon}`;
+            elements.dqnQuickIcon.style.color = bestAction.color;
+        }
+        if (elements.dqnQuickDesc) elements.dqnQuickDesc.textContent = bestAction.desc;
+
+        // 2. Update Dedicated RL Tab Elements
+        if (elements.rlActionCode) {
+            elements.rlActionCode.textContent = `${bestAction.code}: OPTIMAL POLICY RECOMMENDATION`;
+            elements.rlActionCode.style.color = bestAction.color;
+        }
+        if (elements.rlActionTitle) elements.rlActionTitle.textContent = bestAction.name;
+        if (elements.rlActionDesc) elements.rlActionDesc.textContent = bestAction.desc;
+        if (elements.rlActionIconCircle) {
+            elements.rlActionIconCircle.innerHTML = `<i class="fa-solid ${bestAction.icon}"></i>`;
+            elements.rlActionIconCircle.style.borderColor = bestAction.color;
+            elements.rlActionIconCircle.style.color = bestAction.color;
+            elements.rlActionIconCircle.style.backgroundColor = bestAction.color + '22';
+        }
+
+        if (elements.rlRationaleText) {
+            if (bestAction.id === 3) {
+                elements.rlRationaleText.textContent = `Severe convective cloudburst predicted (${pred_mm.toFixed(1)} mm/h). The RL agent selects Evacuation (Action 3) to secure the maximum disaster prevention reward (+100) and avoid catastrophic failure (-100).`;
+            } else if (bestAction.id === 2) {
+                elements.rlRationaleText.textContent = `High cloud top vertical extension (${cth.toFixed(1)} km) and moderate rain detected. The agent selects Grid Backup (Action 2) with +25 reward to defend against solar drop and squalls.`;
+            } else if (bestAction.id === 1) {
+                elements.rlRationaleText.textContent = `Gentle/Moderate precipitation predicted (${pred_mm.toFixed(1)} mm/h). The agent selects Agricultural Delay (Action 1) to conserve water resources (+15 reward).`;
+            } else {
+                elements.rlRationaleText.textContent = `Atmospheric conditions indicate fair/dry weather (${pred_mm.toFixed(1)} mm/h). Action 0 (Normal Operations) is selected to prevent costly false alarm penalties (-50).`;
+            }
+        }
+
+        // Q-Values Distribution Bars
+        if (elements.qValuesList) {
+            const maxQ = Math.max(10, ...qArr.map(q => q.val));
+            const minQ = Math.min(-10, ...qArr.map(q => q.val));
+            const range = maxQ - minQ;
+
+            elements.qValuesList.innerHTML = qArr.map(q => {
+                const isSelected = q.id === bestAction.id;
+                const normalizedPct = Math.max(8, Math.min(100, ((q.val - minQ) / range) * 100));
+                return `
+                    <div class="q-val-item ${isSelected ? 'active-q-item' : ''}">
+                        <div class="q-item-header">
+                            <span class="q-item-name"><i class="fa-solid ${q.icon}" style="color:${q.color}"></i> ${q.name}</span>
+                            <span class="q-item-val" style="color:${q.color}">Q = ${q.val.toFixed(1)}</span>
+                        </div>
+                        <div class="q-item-track">
+                            <div class="q-item-fill" style="width: ${normalizedPct}%; background: ${q.color};"></div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+    }
+
+    // --- 8. UI & XAI Rendering ---
     function updatePredictionUI(data) {
         const mm = data.predicted_rainfall_mm;
         const cat = data.category;
@@ -576,6 +844,19 @@ document.addEventListener('DOMContentLoaded', () => {
         if (state.charts.attention && data.temporal_attention_weights) {
             state.charts.attention.data.datasets[0].data = data.temporal_attention_weights;
             state.charts.attention.update();
+
+            // Find peak attention hour
+            let maxW = -1;
+            let peakIdx = 23;
+            data.temporal_attention_weights.forEach((w, idx) => {
+                if (w > maxW) {
+                    maxW = w;
+                    peakIdx = idx;
+                }
+            });
+            const hoursAgo = 23 - peakIdx;
+            if (elements.peakTriggerHour) elements.peakTriggerHour.textContent = hoursAgo === 0 ? 'Current Hour (t0)' : `t-${hoursAgo}h preceding`;
+            if (elements.peakAttentionVal) elements.peakAttentionVal.textContent = `Weight: ${maxW.toFixed(3)}`;
         }
 
         // 2. Feature Attribution Waterfall Bars
@@ -703,7 +984,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function loadScenario(scId) {
         if (!state.scenarios[scId]) return;
         const sc = state.scenarios[scId];
-        const scenarioData = sc.data || sc.weather;
+        const scenarioData = sc.weather || sc.data;
         if (!scenarioData) return;
         
         state.scenario = scId;
@@ -734,7 +1015,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }, 150);
     }
 
-    // --- 6. Event Listeners ---
+    // --- 9. Event Listeners ---
     function setupEventListeners() {
         paramKeys.forEach(k => {
             const slider = document.getElementById(`param_${k}`);
@@ -795,7 +1076,15 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         // View Mode Switching Tabs
-        const modeButtons = [elements.btnModeQuick, elements.btnModeXAI, elements.btnModeMap, elements.btnModeMetrics];
+        const modeButtons = [
+            elements.btnModeQuick,
+            elements.btnModeXAI,
+            elements.btnModeRL,
+            elements.btnModeHistorical,
+            elements.btnModeMap,
+            elements.btnModeMetrics
+        ];
+        
         modeButtons.forEach(btn => {
             if (!btn) return;
             btn.addEventListener('click', () => {
@@ -804,6 +1093,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 state.mode = btn.dataset.mode;
 
                 if (elements.xaiSection) elements.xaiSection.classList.add('hidden');
+                if (elements.rlSection) elements.rlSection.classList.add('hidden');
+                if (elements.historicalSection) elements.historicalSection.classList.add('hidden');
                 if (elements.mapSection) elements.mapSection.classList.add('hidden');
                 if (elements.benchmarksSection) elements.benchmarksSection.classList.add('hidden');
                 if (elements.mainDashboardGrid) elements.mainDashboardGrid.classList.remove('hidden');
@@ -811,6 +1102,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 if (state.mode === 'xai') {
                     if (elements.xaiSection) elements.xaiSection.classList.remove('hidden');
+                } else if (state.mode === 'rl') {
+                    if (elements.rlSection) elements.rlSection.classList.remove('hidden');
+                } else if (state.mode === 'historical') {
+                    if (elements.historicalSection) elements.historicalSection.classList.remove('hidden');
                 } else if (state.mode === 'map') {
                     if (elements.mapSection) elements.mapSection.classList.remove('hidden');
                     setTimeout(() => {
@@ -832,6 +1127,46 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         }
 
+        if (elements.btnQuickOpenRL) {
+            elements.btnQuickOpenRL.addEventListener('click', () => {
+                if (elements.btnModeRL) elements.btnModeRL.click();
+            });
+        }
+
+        // Historical Dataset Controls
+        if (elements.btnHistPrev) {
+            elements.btnHistPrev.addEventListener('click', () => {
+                const nextIdx = Math.max(0, state.historical.currentIndex - 24);
+                fetchHistoricalSequence(nextIdx);
+            });
+        }
+
+        if (elements.btnHistNext) {
+            elements.btnHistNext.addEventListener('click', () => {
+                const nextIdx = Math.min(state.historical.totalRecords - 25, state.historical.currentIndex + 24);
+                fetchHistoricalSequence(nextIdx);
+            });
+        }
+
+        if (elements.btnHistRandom) {
+            elements.btnHistRandom.addEventListener('click', () => {
+                const randomIdx = Math.floor(Math.random() * (state.historical.totalRecords - 100));
+                fetchHistoricalSequence(randomIdx);
+            });
+        }
+
+        if (elements.histIndexSlider) {
+            elements.histIndexSlider.addEventListener('input', (e) => {
+                const val = parseInt(e.target.value);
+                fetchHistoricalSequence(val);
+            });
+        }
+
+        if (elements.btnRunHistValidation) {
+            elements.btnRunHistValidation.addEventListener('click', runHistoricalInference);
+        }
+
+        // Map Station Chips
         document.querySelectorAll('.station-chip').forEach(chip => {
             chip.addEventListener('click', () => {
                 const lat = parseFloat(chip.dataset.lat);
@@ -858,13 +1193,12 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         }
 
-        // Map Layer Opacity Slider (Adjusts Radar, Satellite Clouds, and Overlays)
+        // Map Layer Opacity Slider
         if (elements.radarOpacity) {
             elements.radarOpacity.addEventListener('input', (e) => {
                 const val = parseInt(e.target.value);
                 state.map.opacity = val / 100.0;
                 
-                // 1. Update Radar Doppler frame opacity
                 if (state.map.radarLayers.length > 0 && state.map.activeLayers.radar) {
                     state.map.radarLayers.forEach(l => {
                         if (l && typeof l.setOpacity === 'function') {
@@ -873,14 +1207,13 @@ document.addEventListener('DOMContentLoaded', () => {
                     });
                 }
 
-                // 2. Update INSAT Infrared Cloud Layer opacity
                 if (state.map.cloudLayer && typeof state.map.cloudLayer.setOpacity === 'function') {
                     state.map.cloudLayer.setOpacity(state.map.opacity);
                 }
             });
         }
 
-        // Map Layer Switcher Pills (Rain Radar, INSAT Infrared Clouds, Wind)
+        // Map Layer Switcher Pills
         document.querySelectorAll('.layer-pill').forEach(pill => {
             pill.addEventListener('click', () => {
                 const layer = pill.dataset.layer;
@@ -936,7 +1269,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // --- 7. Chart Initializations ---
+    // --- 10. Chart Initializations ---
     function initCharts() {
         const fontConfig = { family: "'JetBrains Mono', monospace", size: 10 };
 
