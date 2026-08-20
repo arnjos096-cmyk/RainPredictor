@@ -68,7 +68,7 @@ def load_resources():
         checkpoint = torch.load('model.pth', map_location=device, weights_only=False)
         # Check if checkpoint has attention/feature_proj
         if 'attention.attention.weight' in checkpoint or 'feature_proj.weight' in checkpoint:
-            model = EnhancedRainfallLSTM(actual_input_size=19, legacy_input_size=11, hidden_size=64, num_layers=2, dropout=0.2).to(device)
+            model = EnhancedRainfallLSTM(actual_input_size=19, legacy_input_size=11, hidden_size=128, num_layers=2, dropout=0.3689).to(device)
         else:
             model = RainfallLSTM(input_size=11, hidden_size=64, num_layers=2, dropout=0.2).to(device)
             

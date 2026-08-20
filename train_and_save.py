@@ -23,8 +23,8 @@ def main():
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
     val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
     
-    model = EnhancedRainfallLSTM(actual_input_size=11, legacy_input_size=11, hidden_size=64, num_layers=2, dropout=0.2).to(device)
-    optimizer = optim.Adam(model.parameters(), lr=0.002)
+    model = EnhancedRainfallLSTM(actual_input_size=19, legacy_input_size=11, hidden_size=128, num_layers=2, dropout=0.3689).to(device)
+    optimizer = optim.Adam(model.parameters(), lr=0.000436)
     
     num_epochs = 15
     print(f"Training EnhancedRainfallLSTM with positive rain sample weighting for {num_epochs} epochs...")
@@ -38,9 +38,11 @@ def main():
             optimizer.zero_grad()
             outputs = model(X_batch)
             
-            # Weighted loss: positive rain instances weighted 20x to counter extreme class imbalance
-            weights = torch.where(y_batch > 0.005, 25.0, 1.0)
-            loss = torch.mean(weights * ((outputs - y_batch) ** 2))
+            # Weighted loss: positive rain instances weighted counter extreme class imbalance
+            criterion = nn.HuberLoss(delta=1.0)
+            weights = torch.where(y_batch > 0.005, 5.0, 1.0) # tuned weights
+            loss = torch.mean(weights * criterion(outputs, y_batch))
+
             
             loss.backward()
             optimizer.step()
@@ -54,8 +56,9 @@ def main():
             for X_batch, y_batch in val_loader:
                 X_batch, y_batch = X_batch.to(device), y_batch.to(device)
                 outputs = model(X_batch)
-                weights = torch.where(y_batch > 0.005, 25.0, 1.0)
-                loss = torch.mean(weights * ((outputs - y_batch) ** 2))
+                weights = torch.where(y_batch > 0.005, 5.0, 1.0)
+                criterion = nn.HuberLoss(delta=1.0)
+                loss = torch.mean(weights * criterion(outputs, y_batch))
                 running_val_loss += loss.item() * X_batch.size(0)
                 
         val_loss = running_val_loss / len(val_loader.dataset)
