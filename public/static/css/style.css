@@ -1,0 +1,2056 @@
+/* ==========================================================================
+   ISRO MOSDAC / SAC — INSAT-3D/3DR Explainable AI Heavy Rain Nowcasting CSS
+   Design System: Scientific Space Mission Control / High-Density Earth Observation
+   ========================================================================== */
+
+:root {
+    /* Color Palette - Mission Control Slate & ISRO Saffron */
+    --bg-base: #080c14;
+    --bg-surface: #0e1626;
+    --bg-surface-elevated: #131f36;
+    --bg-card: #10192d;
+    --bg-card-inner: #0b1220;
+    --bg-card-hover: #162440;
+    
+    --border-subtle: #1e2d4a;
+    --border-muted: #283a5e;
+    --border-active: #38bdf8;
+    
+    --isro-saffron: #f97316;
+    --isro-saffron-dark: #ea580c;
+    --isro-blue: #38bdf8;
+    
+    --alert-red: #ef4444;
+    --alert-orange: #f97316;
+    --alert-yellow: #eab308;
+    --alert-green: #10b981;
+    --channel-purple: #c084fc;
+    --channel-cyan: #22d3ee;
+    
+    --text-primary: #f8fafc;
+    --text-secondary: #94a3b8;
+    --text-muted: #64748b;
+    --text-code: #38bdf8;
+    
+    --font-heading: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
+    --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    --font-mono: 'JetBrains Mono', 'SF Mono', Consolas, monospace;
+    
+    --radius-sm: 4px;
+    --radius-md: 8px;
+    --radius-lg: 12px;
+    
+    --transition-fast: 0.12s ease;
+    --transition-normal: 0.2s ease;
+}
+
+/* Reset & Base Rules */
+*, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+html {
+    font-size: 14px;
+    background-color: var(--bg-base);
+}
+
+body {
+    background-color: var(--bg-base);
+    color: var(--text-primary);
+    font-family: var(--font-sans);
+    min-height: 100vh;
+    line-height: 1.45;
+    -webkit-font-smoothing: antialiased;
+    background-image: 
+        radial-gradient(ellipse at 50% 0%, rgba(14, 28, 54, 0.4) 0%, transparent 60%),
+        linear-gradient(to right, rgba(255, 255, 255, 0.015) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(255, 255, 255, 0.015) 1px, transparent 1px);
+    background-size: 100% 100%, 32px 32px, 32px 32px;
+}
+
+/* Layout App Wrapper */
+.app-wrapper {
+    max-width: 1540px;
+    margin: 0 auto;
+    padding: 16px 20px 32px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+/* --------------------------------------------------------------------------
+   1. Mission Operations Top Navigation Bar
+   -------------------------------------------------------------------------- */
+.top-nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 18px;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.brand-section {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.isro-logo-badge {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #1e293b, #0f172a);
+    border: 1px solid var(--border-muted);
+    border-radius: var(--radius-sm);
+    width: 44px;
+    height: 44px;
+    color: var(--isro-saffron);
+}
+
+.isro-logo-badge .isro-icon {
+    font-size: 1.3rem;
+}
+
+.brand-subbadge {
+    font-family: var(--font-mono);
+    font-size: 0.55rem;
+    font-weight: 700;
+    color: var(--isro-blue);
+    letter-spacing: 0.5px;
+    margin-top: 1px;
+}
+
+.brand-title-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.brand-title {
+    font-family: var(--font-heading);
+    font-size: 1.35rem;
+    font-weight: 700;
+    letter-spacing: -0.3px;
+    color: var(--text-primary);
+}
+
+.badge-sih {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    font-weight: 600;
+    padding: 2px 7px;
+    background: rgba(249, 115, 22, 0.15);
+    color: var(--isro-saffron);
+    border: 1px solid rgba(249, 115, 22, 0.35);
+    border-radius: var(--radius-sm);
+}
+
+.classification-tag {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    letter-spacing: 0.6px;
+}
+
+.brand-subtitle {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    margin-top: 2px;
+}
+
+/* Header Telemetry Strip */
+.header-telemetry-strip {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.telemetry-pill {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 10px;
+    background: var(--bg-card-inner);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-sm);
+    font-size: 0.75rem;
+    font-family: var(--font-mono);
+}
+
+.pill-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+}
+
+.dot-active {
+    background-color: var(--alert-green);
+    box-shadow: 0 0 6px var(--alert-green);
+}
+
+.pill-label {
+    color: var(--text-muted);
+}
+
+.pill-value {
+    color: var(--isro-blue);
+    font-weight: 600;
+}
+
+.clock-pill {
+    color: var(--text-secondary);
+}
+
+/* Navigation Mode Toggle Buttons */
+.mode-toggle-group {
+    display: flex;
+    background: var(--bg-card-inner);
+    padding: 3px;
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-sm);
+    gap: 2px;
+    flex-wrap: wrap;
+}
+
+.mode-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    padding: 7px 12px;
+    font-size: 0.78rem;
+    font-weight: 500;
+    font-family: var(--font-sans);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: var(--transition-fast);
+    white-space: nowrap;
+}
+
+.mode-btn:hover {
+    color: var(--text-primary);
+    background: rgba(255, 255, 255, 0.04);
+}
+
+.mode-btn.active {
+    background: var(--bg-surface-elevated);
+    color: var(--isro-blue);
+    font-weight: 600;
+    border: 1px solid var(--border-muted);
+}
+
+/* --------------------------------------------------------------------------
+   2. Mission Warning & Alert Banner
+   -------------------------------------------------------------------------- */
+.alert-banner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 18px;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    gap: 16px;
+    transition: var(--transition-normal);
+}
+
+.alert-banner.alert-red {
+    border-left: 4px solid var(--alert-red);
+    background: linear-gradient(90deg, rgba(239, 68, 68, 0.12), var(--bg-surface) 35%);
+}
+
+.alert-banner.alert-orange {
+    border-left: 4px solid var(--alert-orange);
+    background: linear-gradient(90deg, rgba(249, 115, 22, 0.12), var(--bg-surface) 35%);
+}
+
+.alert-banner.alert-yellow {
+    border-left: 4px solid var(--alert-yellow);
+    background: linear-gradient(90deg, rgba(234, 179, 8, 0.12), var(--bg-surface) 35%);
+}
+
+.alert-banner.alert-green {
+    border-left: 4px solid var(--alert-green);
+    background: linear-gradient(90deg, rgba(16, 185, 129, 0.12), var(--bg-surface) 35%);
+}
+
+.alert-content {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.alert-badge-icon {
+    font-size: 1.4rem;
+    color: var(--alert-red);
+    flex-shrink: 0;
+}
+
+.alert-banner.alert-orange .alert-badge-icon { color: var(--alert-orange); }
+.alert-banner.alert-yellow .alert-badge-icon { color: var(--alert-yellow); }
+.alert-banner.alert-green .alert-badge-icon { color: var(--alert-green); }
+
+.alert-headline {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 2px;
+}
+
+.alert-tier-tag {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: var(--radius-sm);
+    background: rgba(239, 68, 68, 0.2);
+    color: var(--alert-red);
+    border: 1px solid rgba(239, 68, 68, 0.4);
+}
+
+.alert-banner.alert-orange .alert-tier-tag {
+    background: rgba(249, 115, 22, 0.2);
+    color: var(--alert-orange);
+    border-color: rgba(249, 115, 22, 0.4);
+}
+
+.alert-banner.alert-yellow .alert-tier-tag {
+    background: rgba(234, 179, 8, 0.2);
+    color: var(--alert-yellow);
+    border-color: rgba(234, 179, 8, 0.4);
+}
+
+.alert-banner.alert-green .alert-tier-tag {
+    background: rgba(16, 185, 129, 0.2);
+    color: var(--alert-green);
+    border-color: rgba(16, 185, 129, 0.4);
+}
+
+.alert-headline strong {
+    font-size: 0.95rem;
+    color: var(--text-primary);
+    font-family: var(--font-heading);
+}
+
+.alert-detail {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+}
+
+.nowcast-lead-time {
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    white-space: nowrap;
+    padding: 5px 10px;
+    background: var(--bg-card-inner);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-sm);
+}
+
+.nowcast-lead-time strong {
+    color: var(--isro-blue);
+}
+
+/* --------------------------------------------------------------------------
+   3. Curated Synoptic Scenario Selector Bar
+   -------------------------------------------------------------------------- */
+.scenario-bar {
+    display: flex;
+    align-items: center;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    padding: 8px 14px;
+    gap: 12px;
+    overflow-x: auto;
+}
+
+.section-label {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.scenario-chips {
+    display: flex;
+    gap: 6px;
+    overflow-x: auto;
+    padding-bottom: 2px;
+}
+
+.scenario-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 10px;
+    background: var(--bg-card-inner);
+    border: 1px solid var(--border-subtle);
+    color: var(--text-secondary);
+    font-size: 0.76rem;
+    font-family: var(--font-sans);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: var(--transition-fast);
+}
+
+.scenario-chip .chip-code {
+    font-family: var(--font-mono);
+    font-weight: 700;
+    font-size: 0.7rem;
+}
+
+.scenario-chip:hover {
+    background: var(--bg-surface-elevated);
+    color: var(--text-primary);
+    border-color: var(--border-muted);
+}
+
+.scenario-chip.active {
+    background: var(--bg-surface-elevated);
+    color: var(--text-primary);
+    border-color: var(--isro-blue);
+    font-weight: 600;
+}
+
+/* --------------------------------------------------------------------------
+   4. Main Dashboard Grid Layout
+   -------------------------------------------------------------------------- */
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: 1fr 380px;
+    gap: 14px;
+}
+
+@media (max-width: 1100px) {
+    .dashboard-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Control Panel Section */
+.control-panel {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    padding: 16px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--border-subtle);
+    padding-bottom: 12px;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.panel-title {
+    font-family: var(--font-heading);
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.panel-title i {
+    color: var(--isro-saffron);
+}
+
+.panel-desc {
+    font-size: 0.76rem;
+    color: var(--text-muted);
+    margin-top: 2px;
+}
+
+.control-actions {
+    display: flex;
+    gap: 6px;
+}
+
+.btn-secondary {
+    background: var(--bg-card-inner);
+    border: 1px solid var(--border-subtle);
+    color: var(--text-secondary);
+    font-size: 0.75rem;
+    font-family: var(--font-sans);
+    padding: 5px 10px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    transition: var(--transition-fast);
+}
+
+.btn-secondary:hover {
+    background: var(--bg-surface-elevated);
+    color: var(--text-primary);
+    border-color: var(--border-muted);
+}
+
+/* Synoptic Trend Row */
+.synoptic-trend-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    background: var(--bg-card-inner);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-sm);
+    padding: 10px 12px;
+}
+
+@media (max-width: 650px) {
+    .synoptic-trend-row {
+        grid-template-columns: 1fr;
+    }
+}
+
+.trend-field label {
+    font-size: 0.74rem;
+    font-weight: 500;
+    color: var(--text-muted);
+    display: block;
+    margin-bottom: 6px;
+}
+
+.trend-selector {
+    display: flex;
+    gap: 4px;
+}
+
+.trend-btn {
+    flex: 1;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
+    color: var(--text-secondary);
+    font-size: 0.73rem;
+    font-family: var(--font-sans);
+    padding: 5px 6px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    text-align: center;
+    transition: var(--transition-fast);
+}
+
+.trend-btn:hover {
+    background: var(--bg-surface-elevated);
+    color: var(--text-primary);
+}
+
+.trend-btn.active {
+    background: var(--bg-surface-elevated);
+    border-color: var(--isro-blue);
+    color: var(--text-primary);
+    font-weight: 600;
+}
+
+.hour-slider-field .label-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+}
+
+.hour-slider-field .val-pill {
+    font-family: var(--font-mono);
+    font-size: 0.74rem;
+    font-weight: 600;
+    color: var(--isro-blue);
+}
+
+/* --------------------------------------------------------------------------
+   5. High-Density Telemetry Sliders Grid
+   -------------------------------------------------------------------------- */
+.telemetry-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 10px;
+}
+
+.telemetry-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-sm);
+    padding: 10px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    transition: var(--transition-fast);
+}
+
+.telemetry-card:hover {
+    border-color: var(--border-muted);
+    background: var(--bg-card-hover);
+}
+
+.telemetry-card.highlight-card {
+    border-left: 3px solid var(--isro-saffron);
+}
+
+.card-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.param-name {
+    font-size: 0.77rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.param-val {
+    font-family: var(--font-mono);
+    font-size: 0.88rem;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.param-val .unit {
+    font-size: 0.72rem;
+    font-weight: 400;
+    color: var(--text-muted);
+    margin-left: 2px;
+}
+
+/* Custom Clean Range Slider */
+.slider {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 4px;
+    background: #1e2d4a;
+    border-radius: 2px;
+    outline: none;
+    cursor: pointer;
+}
+
+.slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: var(--isro-blue);
+    border: 2px solid var(--bg-surface);
+    cursor: pointer;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+    transition: transform 0.1s ease;
+}
+
+.slider::-webkit-slider-thumb:hover {
+    transform: scale(1.2);
+}
+
+.slider-purple::-webkit-slider-thumb { background: var(--channel-purple); }
+.slider-blue::-webkit-slider-thumb { background: var(--isro-blue); }
+.slider-amber::-webkit-slider-thumb { background: var(--alert-yellow); }
+
+.slider-ticks {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.65rem;
+    font-family: var(--font-mono);
+    color: var(--text-muted);
+    margin-top: -2px;
+}
+
+/* --------------------------------------------------------------------------
+   6. Prediction Output & Radial Gauge Card
+   -------------------------------------------------------------------------- */
+.prediction-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.gauge-card {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.gauge-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--border-subtle);
+    padding-bottom: 8px;
+}
+
+.badge-tag {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: var(--isro-saffron);
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.timestamp {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    color: var(--text-muted);
+}
+
+.gauge-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+}
+
+.radial-gauge-wrapper {
+    position: relative;
+    width: 170px;
+    height: 170px;
+    margin: 4px 0;
+}
+
+.radial-gauge {
+    width: 100%;
+    height: 100%;
+    transform: rotate(-90deg);
+}
+
+.gauge-bg {
+    fill: none;
+    stroke: #162440;
+    stroke-width: 12;
+}
+
+.gauge-progress {
+    fill: none;
+    stroke: var(--isro-blue);
+    stroke-width: 12;
+    stroke-linecap: round;
+    transition: stroke-dashoffset 0.4s ease, stroke 0.3s ease;
+}
+
+.gauge-center-text {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+}
+
+.gauge-val {
+    font-family: var(--font-mono);
+    font-size: 2.2rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    line-height: 1;
+}
+
+.gauge-unit {
+    font-size: 0.75rem;
+    font-family: var(--font-mono);
+    color: var(--text-muted);
+    margin-top: 3px;
+}
+
+.gauge-label {
+    font-size: 0.65rem;
+    font-weight: 600;
+    color: var(--isro-blue);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-top: 4px;
+}
+
+.gauge-summary {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.risk-badge {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 7px 12px;
+    border-radius: var(--radius-sm);
+    font-weight: 600;
+    font-size: 0.84rem;
+    background: rgba(56, 189, 248, 0.1);
+    border: 1px solid rgba(56, 189, 248, 0.3);
+    color: var(--isro-blue);
+    text-align: center;
+}
+
+.risk-desc {
+    font-size: 0.76rem;
+    color: var(--text-secondary);
+    text-align: center;
+    line-height: 1.35;
+}
+
+.prob-bar-container {
+    background: var(--bg-card-inner);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-sm);
+    padding: 8px 10px;
+    margin-top: 4px;
+}
+
+.prob-label-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    margin-bottom: 5px;
+}
+
+.prob-label-row span:last-child {
+    font-family: var(--font-mono);
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.prob-track {
+    height: 6px;
+    background: #162440;
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.prob-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--isro-blue), var(--isro-saffron));
+    border-radius: 3px;
+    transition: width 0.3s ease;
+}
+
+/* --------------------------------------------------------------------------
+   6B. DQN Autonomous Decision Advisory Card (Quick View)
+   -------------------------------------------------------------------------- */
+.dqn-advisory-card {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    padding: 14px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.dqn-quick-advisory {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    background: var(--bg-card-inner);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-sm);
+    padding: 10px 12px;
+}
+
+.dqn-quick-badge {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.84rem;
+    font-weight: 700;
+    color: var(--alert-red);
+}
+
+.dqn-quick-desc {
+    font-size: 0.74rem;
+    color: var(--text-secondary);
+    line-height: 1.35;
+}
+
+/* 12-Hour Forward Horizon Card */
+.forecast-chart-card, .insights-card {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    padding: 14px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.card-header-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.card-heading {
+    font-family: var(--font-heading);
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.card-heading i {
+    color: var(--isro-blue);
+}
+
+.forecast-status-tag {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    padding: 2px 6px;
+    background: var(--bg-card-inner);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-sm);
+    color: var(--text-muted);
+}
+
+.chart-container {
+    height: 140px;
+    position: relative;
+}
+
+/* Top XAI Quick List */
+.quick-xai-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.quick-xai-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--bg-card-inner);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-sm);
+    padding: 6px 10px;
+    font-size: 0.76rem;
+}
+
+.quick-xai-item span {
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.quick-xai-item strong {
+    font-family: var(--font-mono);
+    color: var(--alert-green);
+}
+
+/* --------------------------------------------------------------------------
+   7. Dedicated XAI Explainability Hub Section
+   -------------------------------------------------------------------------- */
+.xai-section {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    padding: 18px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.xai-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--border-subtle);
+    padding-bottom: 12px;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.xai-confidence-pill {
+    font-family: var(--font-mono);
+    font-size: 0.76rem;
+    font-weight: 600;
+    color: var(--alert-green);
+    background: rgba(16, 185, 129, 0.1);
+    border: 1px solid rgba(16, 185, 129, 0.3);
+    padding: 5px 10px;
+    border-radius: var(--radius-sm);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.xai-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+}
+
+@media (max-width: 900px) {
+    .xai-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.xai-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    padding: 14px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.xai-badge {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    padding: 2px 6px;
+    background: var(--bg-card-inner);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-sm);
+    color: var(--isro-blue);
+}
+
+.xai-subtext {
+    font-size: 0.74rem;
+    color: var(--text-muted);
+    line-height: 1.35;
+}
+
+.xai-chart-container {
+    height: 200px;
+    position: relative;
+}
+
+.attention-summary-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-family: var(--font-mono);
+    font-size: 0.74rem;
+    background: var(--bg-card-inner);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-sm);
+    padding: 6px 10px;
+    color: var(--text-primary);
+}
+
+/* Feature Attribution Waterfall Bars */
+.feature-attribution-bars {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    max-height: 220px;
+    overflow-y: auto;
+    padding-right: 4px;
+}
+
+.attr-row {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.attr-label-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.73rem;
+    color: var(--text-secondary);
+}
+
+.attr-pct {
+    font-family: var(--font-mono);
+    font-weight: 600;
+    color: var(--isro-blue);
+}
+
+.attr-track {
+    height: 5px;
+    background: var(--bg-card-inner);
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+.attr-fill {
+    height: 100%;
+    background: var(--isro-blue);
+    border-radius: 2px;
+    transition: width 0.3s ease;
+}
+
+/* "Why Model Can Fail" Diagnostic Cards */
+.xai-failure-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-subtle);
+    border-left: 4px solid var(--alert-yellow);
+    border-radius: var(--radius-md);
+    padding: 16px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.failure-tag {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: var(--alert-yellow);
+    background: rgba(234, 179, 8, 0.12);
+    border: 1px solid rgba(234, 179, 8, 0.3);
+    padding: 2px 6px;
+    border-radius: var(--radius-sm);
+}
+
+.failure-diagnostics-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.failure-item {
+    background: var(--bg-card-inner);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-sm);
+    padding: 12px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.failure-item-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.failure-item-title {
+    font-size: 0.84rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.failure-severity-badge {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: var(--radius-sm);
+}
+
+.severity-high {
+    background: rgba(239, 68, 68, 0.2);
+    color: var(--alert-red);
+    border: 1px solid rgba(239, 68, 68, 0.4);
+}
+
+.severity-mod {
+    background: rgba(234, 179, 8, 0.2);
+    color: var(--alert-yellow);
+    border: 1px solid rgba(234, 179, 8, 0.4);
+}
+
+.severity-low {
+    background: rgba(16, 185, 129, 0.2);
+    color: var(--alert-green);
+    border: 1px solid rgba(16, 185, 129, 0.4);
+}
+
+.failure-cause {
+    font-size: 0.77rem;
+    color: var(--text-secondary);
+    line-height: 1.4;
+}
+
+.failure-remedy {
+    font-size: 0.74rem;
+    font-family: var(--font-mono);
+    color: var(--isro-blue);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+/* --------------------------------------------------------------------------
+   8. Dedicated DQN Reinforcement Learning Section
+   -------------------------------------------------------------------------- */
+.rl-section {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    padding: 18px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.rl-badge-status {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-family: var(--font-mono);
+    font-size: 0.74rem;
+    background: var(--bg-card-inner);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-sm);
+    padding: 5px 10px;
+    color: var(--text-secondary);
+}
+
+.rl-badge-status strong {
+    color: var(--alert-green);
+}
+
+.rl-grid {
+    display: grid;
+    grid-template-columns: 1.2fr 1fr;
+    gap: 14px;
+}
+
+@media (max-width: 950px) {
+    .rl-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.rl-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    padding: 16px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.rl-policy-tag {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    font-weight: 700;
+    padding: 2px 7px;
+    background: rgba(56, 189, 248, 0.15);
+    color: var(--isro-blue);
+    border: 1px solid rgba(56, 189, 248, 0.35);
+    border-radius: var(--radius-sm);
+}
+
+.rl-action-display {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    background: var(--bg-card-inner);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-sm);
+    padding: 14px 16px;
+}
+
+.rl-action-icon-circle {
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    background: rgba(239, 68, 68, 0.18);
+    border: 2px solid var(--alert-red);
+    color: var(--alert-red);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    flex-shrink: 0;
+}
+
+.rl-action-code {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: var(--alert-red);
+    letter-spacing: 0.5px;
+}
+
+.rl-action-title {
+    font-family: var(--font-heading);
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin: 2px 0;
+}
+
+.rl-action-desc {
+    font-size: 0.78rem;
+    color: var(--text-secondary);
+}
+
+.rl-rationale-box {
+    background: var(--bg-card-inner);
+    border: 1px solid var(--border-subtle);
+    border-left: 3px solid var(--alert-yellow);
+    border-radius: var(--radius-sm);
+    padding: 10px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.rationale-header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.76rem;
+    color: var(--text-primary);
+}
+
+.rl-rationale-box p {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    line-height: 1.4;
+}
+
+/* Q-Values Distribution Bars */
+.q-values-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.q-val-item {
+    background: var(--bg-card-inner);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-sm);
+    padding: 8px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.q-val-item.active-q-item {
+    border-color: var(--isro-blue);
+    background: var(--bg-surface-elevated);
+}
+
+.q-item-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.75rem;
+}
+
+.q-item-name {
+    font-weight: 600;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.q-item-val {
+    font-family: var(--font-mono);
+    font-weight: 700;
+    color: var(--isro-blue);
+}
+
+.q-item-track {
+    height: 5px;
+    background: #162440;
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+.q-item-fill {
+    height: 100%;
+    background: var(--isro-blue);
+    border-radius: 2px;
+    transition: width 0.3s ease;
+}
+
+/* MDP Actions Matrix Grid */
+.rl-env-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    padding: 16px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.rl-actions-matrix-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 10px;
+}
+
+.matrix-item {
+    background: var(--bg-card-inner);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-sm);
+    padding: 10px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.matrix-item-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.matrix-code {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: var(--text-muted);
+}
+
+.matrix-badge {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    font-weight: 700;
+    padding: 1px 6px;
+    border-radius: var(--radius-sm);
+}
+
+.bg-green { background: rgba(16, 185, 129, 0.2); color: var(--alert-green); border: 1px solid rgba(16, 185, 129, 0.4); }
+.bg-blue { background: rgba(56, 189, 248, 0.2); color: var(--isro-blue); border: 1px solid rgba(56, 189, 248, 0.4); }
+.bg-amber { background: rgba(234, 179, 8, 0.2); color: var(--alert-yellow); border: 1px solid rgba(234, 179, 8, 0.4); }
+.bg-red { background: rgba(239, 68, 68, 0.2); color: var(--alert-red); border: 1px solid rgba(239, 68, 68, 0.4); }
+
+.matrix-desc {
+    font-size: 0.74rem;
+    color: var(--text-secondary);
+    line-height: 1.35;
+}
+
+/* --------------------------------------------------------------------------
+   9. Dedicated Historical Dataset Replay Section
+   -------------------------------------------------------------------------- */
+.historical-section {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    padding: 18px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.historical-controls-strip {
+    display: flex;
+    gap: 6px;
+}
+
+.historical-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+}
+
+@media (max-width: 900px) {
+    .historical-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.hist-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    padding: 16px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.hist-meta-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.75rem;
+    font-family: var(--font-mono);
+    background: var(--bg-card-inner);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-sm);
+    padding: 8px 10px;
+}
+
+.hist-slider-box {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.hist-slider-box label {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}
+
+.btn-primary-run {
+    background: linear-gradient(135deg, #0284c7, #0369a1);
+    color: #ffffff;
+    border: 1px solid rgba(56, 189, 248, 0.4);
+    border-radius: var(--radius-sm);
+    padding: 10px 14px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    font-family: var(--font-sans);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: var(--transition-fast);
+}
+
+.btn-primary-run:hover {
+    background: linear-gradient(135deg, #0369a1, #075985);
+    box-shadow: 0 0 12px rgba(56, 189, 248, 0.35);
+}
+
+.hist-comparison-display {
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    background: var(--bg-card-inner);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-sm);
+    padding: 14px 16px;
+}
+
+.comp-box {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+}
+
+.comp-label {
+    font-size: 0.72rem;
+    color: var(--text-muted);
+}
+
+.comp-val {
+    font-family: var(--font-mono);
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.comp-val .unit {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}
+
+.actual-box .comp-val { color: var(--isro-blue); }
+.pred-box .comp-val { color: var(--isro-saffron); }
+
+.comp-tag {
+    font-family: var(--font-mono);
+    font-size: 0.66rem;
+    color: var(--text-muted);
+}
+
+.comp-vs {
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--text-muted);
+}
+
+.hist-residual-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    background: var(--bg-card-inner);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-sm);
+    padding: 8px 10px;
+}
+
+/* --------------------------------------------------------------------------
+   10. Dedicated Benchmarks & Meteorological Accuracy Matrix
+   -------------------------------------------------------------------------- */
+.benchmarks-section {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    padding: 18px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.metrics-kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 10px;
+}
+
+.kpi-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-sm);
+    padding: 12px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.kpi-label {
+    font-size: 0.74rem;
+    color: var(--text-muted);
+}
+
+.kpi-val-row {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+}
+
+.kpi-val {
+    font-family: var(--font-mono);
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: var(--alert-green);
+}
+
+.kpi-target {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    color: var(--text-muted);
+}
+
+/* 2x2 Contingency Matrix */
+.contingency-table-wrapper {
+    background: var(--bg-card);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    padding: 14px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.contingency-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.78rem;
+}
+
+.contingency-table th, .contingency-table td {
+    padding: 10px 14px;
+    text-align: left;
+    border: 1px solid var(--border-subtle);
+}
+
+.contingency-table th {
+    background: var(--bg-card-inner);
+    color: var(--text-muted);
+    font-weight: 600;
+}
+
+.contingency-table td {
+    background: var(--bg-surface);
+    color: var(--text-secondary);
+}
+
+.cell-highlight-green {
+    background: rgba(16, 185, 129, 0.08) !important;
+    color: var(--alert-green) !important;
+}
+
+.cell-highlight-red {
+    background: rgba(239, 68, 68, 0.08) !important;
+    color: var(--alert-red) !important;
+}
+
+.table-total-row td {
+    background: var(--bg-card-inner);
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.metrics-glossary-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    padding: 14px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.glossary-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+}
+
+@media (max-width: 800px) {
+    .glossary-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.glossary-item {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    background: var(--bg-card-inner);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-sm);
+    padding: 8px 10px;
+    line-height: 1.35;
+}
+
+.glossary-item strong {
+    color: var(--text-primary);
+}
+
+/* --------------------------------------------------------------------------
+   11. Interactive Map Section
+   -------------------------------------------------------------------------- */
+.map-section {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    padding: 16px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.map-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.map-layer-pills {
+    display: flex;
+    gap: 4px;
+    background: var(--bg-card-inner);
+    padding: 3px;
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-sm);
+}
+
+.layer-pill {
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    font-size: 0.74rem;
+    font-family: var(--font-sans);
+    padding: 5px 10px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    transition: var(--transition-fast);
+}
+
+.layer-pill.active {
+    background: var(--bg-surface-elevated);
+    color: var(--isro-blue);
+    border: 1px solid var(--border-muted);
+}
+
+.station-chips-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    overflow-x: auto;
+}
+
+.station-label {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    white-space: nowrap;
+}
+
+.station-chips {
+    display: flex;
+    gap: 6px;
+    overflow-x: auto;
+}
+
+.station-chip {
+    padding: 4px 8px;
+    background: var(--bg-card-inner);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-sm);
+    color: var(--text-secondary);
+    font-size: 0.74rem;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.station-chip:hover {
+    background: var(--bg-surface-elevated);
+    color: var(--text-primary);
+}
+
+.map-view-wrapper {
+    position: relative;
+    height: 480px;
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+}
+
+#weatherMap {
+    width: 100%;
+    height: 100%;
+}
+
+.map-hud-overlay {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    background: rgba(14, 22, 38, 0.92);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-sm);
+    padding: 10px 14px;
+    z-index: 1000;
+    min-width: 260px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+}
+
+.hud-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--border-subtle);
+    padding-bottom: 6px;
+    margin-bottom: 6px;
+}
+
+.hud-tag {
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: var(--isro-saffron);
+}
+
+.hud-coords {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    color: var(--text-muted);
+}
+
+.hud-stat {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.74rem;
+    margin: 3px 0;
+}
+
+.hud-stat-label {
+    color: var(--text-muted);
+}
+
+.hud-stat-val {
+    font-family: var(--font-mono);
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.radar-playback-bar {
+    position: absolute;
+    bottom: 12px;
+    left: 12px;
+    right: 12px;
+    background: rgba(14, 22, 38, 0.92);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-sm);
+    padding: 8px 14px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    z-index: 1000;
+}
+
+.radar-play-btn {
+    background: var(--isro-blue);
+    border: none;
+    color: #080c14;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.radar-timeline-slider {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.timeline-meta {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.72rem;
+    color: var(--text-secondary);
+}
+
+.radar-source-tag {
+    font-family: var(--font-mono);
+    color: var(--text-muted);
+}
+
+.radar-opacity-control {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.72rem;
+    color: var(--text-muted);
+}
+
+/* --------------------------------------------------------------------------
+   12. Bottom Synoptic Timeline & Specs Grid
+   -------------------------------------------------------------------------- */
+.bottom-grid {
+    display: grid;
+    grid-template-columns: 1fr 340px;
+    gap: 14px;
+}
+
+@media (max-width: 1000px) {
+    .bottom-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.chart-card-wide, .specs-card {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    padding: 14px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.card-subheading {
+    font-size: 0.74rem;
+    color: var(--text-muted);
+}
+
+.chart-legend-custom {
+    display: flex;
+    gap: 10px;
+    font-size: 0.72rem;
+    font-family: var(--font-mono);
+}
+
+.legend-chip {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    color: var(--text-secondary);
+}
+
+.chip-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+}
+
+.legend-pressure .chip-dot { background: var(--channel-purple); }
+.legend-cloud .chip-dot { background: var(--isro-blue); }
+.legend-rain .chip-dot { background: var(--alert-red); }
+
+.wide-chart-container {
+    height: 180px;
+    position: relative;
+}
+
+/* Specs Grid */
+.specs-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+}
+
+.spec-node {
+    background: var(--bg-card-inner);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-sm);
+    padding: 8px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.spec-key {
+    font-size: 0.68rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+}
+
+.spec-val {
+    font-family: var(--font-mono);
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+/* Footer */
+.app-footer {
+    text-align: center;
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    font-family: var(--font-mono);
+    padding: 12px 0 6px 0;
+    border-top: 1px solid var(--border-subtle);
+}
+
+/* Utility Helpers */
+.hidden {
+    display: none !important;
+}
+
+.text-red { color: var(--alert-red); }
+.text-amber { color: var(--alert-yellow); }
+.text-emerald { color: var(--alert-green); }
+.text-blue { color: var(--isro-blue); }
+.text-purple { color: var(--channel-purple); }
+.text-cyan { color: var(--channel-cyan); }
+.text-slate { color: var(--text-muted); }

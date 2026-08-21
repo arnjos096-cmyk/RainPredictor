@@ -1,8 +1,13 @@
 {
   "version": 2,
+  "functions": {
+    "api/index.py": {
+      "includeFiles": "model_weights.npz|scaler_params.json|synthetic_weather_data.csv"
+    }
+  },
   "rewrites": [
     {
-      "source": "/(.*)",
+      "source": "/api/(.*)",
       "destination": "/api/index.py"
     }
   ]
