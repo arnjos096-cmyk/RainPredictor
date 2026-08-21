@@ -1,14 +1,15 @@
 import os
 import json
 import csv
+import mimetypes
 import warnings
 warnings.filterwarnings('ignore')
 import numpy as np
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, HTMLResponse, Response
 from pydantic import BaseModel, Field
 from typing import List, Optional, Dict, Any
 
@@ -94,14 +95,13 @@ def load_resources():
     scaler_json_path = os.path.join(BASE_DIR, 'scaler_params.json')
     if os.path.exists(scaler_json_path):
         try:
-            with open(scaler_json_path, 'r') as f:
+            with open(scaler_json_path, 'r', encoding='utf-8') as f:
                 params = json.load(f)
             scaler = SimpleMinMaxScaler(params['data_min_'], params['data_max_'])
         except Exception as e:
             print(f"Error loading scaler_params.json: {e}")
     
     if scaler is None:
-        # Default fallback mins/maxs based on dataset distribution
         default_mins = [-81.99, 16.74, 0.5, 400.2, 965.11, 25.03, 9.05, 0.1, 12.01, 2.0, 0.0]
         default_maxs = [26.86, 99.0, 17.8, 4800.0, 1022.4, 99.0, 41.06, 26.16, 158.82, 28.81, 150.0]
         scaler = SimpleMinMaxScaler(default_mins, default_maxs)
@@ -116,7 +116,6 @@ def load_resources():
         except Exception as e:
             print(f"Error loading model_weights.npz: {e}")
     else:
-        # Fallback to model.pth if present
         model_pth_path = os.path.join(BASE_DIR, 'model.pth')
         if os.path.exists(model_pth_path):
             try:
@@ -159,9 +158,6 @@ class ForecastRequest(BaseModel):
     hour_of_day: Optional[int] = 14
 
 def categorize_rainfall(mm: float) -> Dict[str, Any]:
-    """
-    IMD / ISRO Official Classification for Rainfall Intensity
-    """
     if mm < 0.1:
         return {
             "tier": "No Rain / Dry",
@@ -229,10 +225,6 @@ def categorize_rainfall(mm: float) -> Dict[str, Any]:
         }
 
 def analyze_why_model_can_fail(curr: WeatherHour, pred_mm: float) -> List[Dict[str, Any]]:
-    """
-    SIH260006 Core XAI Requirement:
-    Explainable Diagnostic on WHY the model might fail or produce False Alarms / Missed Detections.
-    """
     failure_diagnostics = []
     
     # 1. Cold Anvil Cirrus Shield (False Alarm Risk)
@@ -292,8 +284,13 @@ def format_hour_to_tensor_row(h: WeatherHour) -> List[float]:
         h.rainfall_mm
     ]
 
-# API Endpoints
+# ------------------------------------------------------------------------------
+# API Endpoints (supporting multiple rewrite prefixes for Vercel Serverless)
+# ------------------------------------------------------------------------------
+
 @app.get("/api/status")
+@app.get("/status")
+@app.get("/api/index/api/status")
 def get_status():
     global model, scaler
     if model is None or not model.w:
@@ -312,13 +309,15 @@ def get_status():
     }
 
 @app.get("/api/benchmarks")
+@app.get("/benchmarks")
+@app.get("/api/index/api/benchmarks")
 def get_benchmarks():
-    """Returns official ISRO / IMD verification metrics (POD, FAR, CSI, ETS, F1)."""
     return BENCHMARKS
 
 @app.get("/api/scenarios")
+@app.get("/scenarios")
+@app.get("/api/index/api/scenarios")
 def get_insat_scenarios():
-    """Curated real-world high impact Indian meteorological case studies."""
     return [
         {
             "id": "mumbai_cloudburst",
@@ -438,6 +437,8 @@ def get_insat_scenarios():
     ]
 
 @app.get("/api/historical")
+@app.get("/historical")
+@app.get("/api/index/api/historical")
 def get_historical_slice(start_idx: int = 1000, length: int = 24):
     global cached_historical_data
     csv_file = os.path.join(BASE_DIR, 'synthetic_weather_data.csv')
@@ -478,6 +479,8 @@ def get_historical_slice(start_idx: int = 1000, length: int = 24):
     }
 
 @app.post("/api/predict")
+@app.post("/predict")
+@app.post("/api/index/api/predict")
 def predict_sequence(req: SequencePredictRequest):
     global model, scaler
     if model is None or scaler is None or not model.w:
@@ -488,15 +491,12 @@ def predict_sequence(req: SequencePredictRequest):
     if len(req.sequence) != 24:
         raise HTTPException(status_code=400, detail=f"Expected 24 timesteps, got {len(req.sequence)}")
         
-    raw_matrix = np.array([format_hour_to_tensor_row(h) for h in req.sequence], dtype=np.float32) # (24, 11)
-    
-    # Scale input
+    raw_matrix = np.array([format_hour_to_tensor_row(h) for h in req.sequence], dtype=np.float32)
     scaled_matrix = scaler.transform(raw_matrix)
     curr_hour = req.sequence[-1]
     
     xai_explanation = model.explain_instance(scaled_matrix)
     
-    # Inverse transform prediction to actual mm/h
     dummy_pred = np.zeros((1, 11), dtype=np.float32)
     dummy_pred[0, 10] = xai_explanation["predicted_rainfall_mm"]
     unscaled_pred = scaler.inverse_transform(dummy_pred)[0, 10]
@@ -505,12 +505,10 @@ def predict_sequence(req: SequencePredictRequest):
     category = categorize_rainfall(pred_mm)
     failure_analysis = analyze_why_model_can_fail(curr_hour, pred_mm)
     
-    # Feature names paired with percentage contribution
     feature_attributions = [
         {"label": FEATURES[i]["name"], "name": FEATURES[i]["name"], "id": FEATURES[i]["id"], "percentage": round(float(xai_explanation["feature_importance"][i]), 2), "description": FEATURES[i]["desc"]}
         for i in range(len(FEATURES))
     ]
-    # Sort by importance descending
     feature_attributions.sort(key=lambda x: x["percentage"], reverse=True)
     
     prob_percent = round(float(min(99.5, max(3.0, pred_mm * 4.2 + (50.0 if pred_mm > 5 else 10.0)))), 1)
@@ -551,10 +549,9 @@ def predict_sequence(req: SequencePredictRequest):
     }
 
 @app.post("/api/predict-single")
+@app.post("/predict-single")
+@app.post("/api/index/api/predict-single")
 def predict_single(req: SingleHourPredictRequest):
-    """
-    Synthesizes preceding 23 hours of satellite & meteorological dynamics leading to current hour.
-    """
     curr = req.current
     trend = req.pressure_trend or "falling"
     hour = req.hour_of_day or 14
@@ -565,7 +562,6 @@ def predict_single(req: SingleHourPredictRequest):
         past_hour = (hour - h_offset) % 24
         factor = (24 - h_offset) / 24.0
         
-        # Convective cloud top cooling / diurnal cycle
         if trend == "falling":
             t_ir = curr.tir1_temp + (h_offset * 1.5)
             c_height = max(2.0, curr.cloud_top_height * (0.3 + 0.7 * factor))
@@ -606,6 +602,8 @@ def predict_single(req: SingleHourPredictRequest):
     return predict_sequence(SequencePredictRequest(sequence=seq, hour_of_day=hour))
 
 @app.post("/api/predict-forecast")
+@app.post("/predict-forecast")
+@app.post("/api/index/api/predict-forecast")
 def predict_multi_step_forecast(req: ForecastRequest):
     global model, scaler
     if model is None or scaler is None or not model.w:
@@ -638,7 +636,6 @@ def predict_multi_step_forecast(req: ForecastRequest):
             "category": cat
         })
         
-        # Roll forward autoregressively
         next_row = np.copy(working_window[-1])
         next_row[10] = pred_mm
         if pred_mm > 15.0:
@@ -654,17 +651,43 @@ def predict_multi_step_forecast(req: ForecastRequest):
         "forecast": forecast
     }
 
-# Mount static folder
+# ------------------------------------------------------------------------------
+# Static Files & UI Serving
+# ------------------------------------------------------------------------------
+
+def get_static_file_response(file_path: str):
+    full_path = os.path.join(BASE_DIR, "static", file_path)
+    if os.path.exists(full_path) and os.path.isfile(full_path):
+        mime_type, _ = mimetypes.guess_type(full_path)
+        return FileResponse(full_path, media_type=mime_type or "application/octet-stream")
+    raise HTTPException(status_code=404, detail="File not found")
+
+@app.get("/static/{file_path:path}")
+@app.get("/api/static/{file_path:path}")
+@app.get("/api/index/static/{file_path:path}")
+def serve_static(file_path: str):
+    return get_static_file_response(file_path)
+
+# Static Files Directory Mount (for standard ASGI dev server)
 static_path = os.path.join(BASE_DIR, "static")
 if os.path.exists(static_path):
     app.mount("/static", StaticFiles(directory=static_path), name="static")
 
-@app.get("/")
-def serve_index():
+def serve_html_ui():
     index_file = os.path.join(BASE_DIR, "static", "index.html")
     if os.path.exists(index_file):
-        return FileResponse(index_file)
-    return {"message": "ISRO SIH260006 Explainable AI Nowcaster API is running."}
+        with open(index_file, "r", encoding="utf-8") as f:
+            content = f.read()
+        return HTMLResponse(content=content, status_code=200)
+    return HTMLResponse(content="<h1>ISRO SIH260006 Nowcaster API is running.</h1>", status_code=200)
+
+@app.get("/")
+@app.get("/api")
+@app.get("/api/")
+@app.get("/api/index")
+@app.get("/api/index.py")
+def serve_index():
+    return serve_html_ui()
 
 if __name__ == "__main__":
     import uvicorn
