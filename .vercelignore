@@ -1,0 +1,34 @@
+# Virtual Environments & Caches
+.venv/
+venv/
+env/
+__pycache__/
+*.pyc
+.git/
+.gitignore
+.vscode/
+.idea/
+
+# Heavy Training Datasets & PyTorch Tensors
+X_train.pt
+X_val.pt
+y_train.pt
+y_val.pt
+
+# Offline Training / Research Scripts
+train_and_save.py
+train_and_evaluate.py
+train_dqn.py
+tune.py
+generate_data.py
+eval_only.py
+preprocess.py
+dqn_agent.py
+dqn_policy.pth
+test_*.py
+calc_scaler.py
+export_scaler.py
+verify_scaler.py
+
+# Output Plot Images
+*.png

@@ -1,10 +1,10 @@
 import os
-import pickle
+import json
+import csv
 import warnings
 warnings.filterwarnings('ignore')
 import numpy as np
-import pandas as pd
-import torch
+
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
@@ -12,7 +12,10 @@ from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
 from typing import List, Optional, Dict, Any
 
-from model import INSAT_Rainfall_XAI_LSTM
+from model import NumpyPeepholeConvLSTM
+
+# Base directory for reliable serverless file path resolution
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 app = FastAPI(
     title="ISRO Explainable AI (XAI) Heavy Rain Nowcaster",
@@ -64,30 +67,66 @@ BENCHMARKS = {
     }
 }
 
-device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-model = None
-scaler = None
+class SimpleMinMaxScaler:
+    """
+    Lightweight zero-dependency MinMaxScaler for fast serverless inference.
+    """
+    def __init__(self, data_min, data_max):
+        self.data_min = np.array(data_min, dtype=np.float32)
+        self.data_max = np.array(data_max, dtype=np.float32)
+        self.data_range = self.data_max - self.data_min
+        self.scale = 1.0 / np.where(self.data_range == 0, 1.0, self.data_range)
+        self.min = -self.data_min * self.scale
+
+    def transform(self, X):
+        return X * self.scale + self.min
+
+    def inverse_transform(self, X_scaled):
+        return (X_scaled - self.min) / self.scale
+
+model: Optional[NumpyPeepholeConvLSTM] = None
+scaler: Optional[SimpleMinMaxScaler] = None
+cached_historical_data: Optional[List[Dict[str, Any]]] = None
 
 def load_resources():
     global model, scaler
-    if os.path.exists('scaler.pkl'):
+    # 1. Load Scaler Parameters
+    scaler_json_path = os.path.join(BASE_DIR, 'scaler_params.json')
+    if os.path.exists(scaler_json_path):
         try:
-            with open('scaler.pkl', 'rb') as f:
-                scaler = pickle.load(f)
+            with open(scaler_json_path, 'r') as f:
+                params = json.load(f)
+            scaler = SimpleMinMaxScaler(params['data_min_'], params['data_max_'])
         except Exception as e:
-            print(f"Error loading scaler: {e}")
-            scaler = None
+            print(f"Error loading scaler_params.json: {e}")
+    
+    if scaler is None:
+        # Default fallback mins/maxs based on dataset distribution
+        default_mins = [-81.99, 16.74, 0.5, 400.2, 965.11, 25.03, 9.05, 0.1, 12.01, 2.0, 0.0]
+        default_maxs = [26.86, 99.0, 17.8, 4800.0, 1022.4, 99.0, 41.06, 26.16, 158.82, 28.81, 150.0]
+        scaler = SimpleMinMaxScaler(default_mins, default_maxs)
 
-    model = INSAT_Rainfall_XAI_LSTM(input_size=11, hidden_size=64, num_layers=2, dropout=0.2).to(device)
-    if os.path.exists('model.pth'):
+    # 2. Load Model Weights
+    model = NumpyPeepholeConvLSTM()
+    weights_npz_path = os.path.join(BASE_DIR, 'model_weights.npz')
+    if os.path.exists(weights_npz_path):
         try:
-            model.load_state_dict(torch.load('model.pth', map_location=device, weights_only=False))
-            model.eval()
-            print("Loaded INSAT_Rainfall_XAI_LSTM model.pth successfully.")
+            model.load_weights(weights_npz_path)
+            print("Loaded NumpyPeepholeConvLSTM model_weights.npz successfully.")
         except Exception as e:
-            print(f"Model load notice: {e}")
+            print(f"Error loading model_weights.npz: {e}")
     else:
-        print("Initialized baseline INSAT XAI model.")
+        # Fallback to model.pth if present
+        model_pth_path = os.path.join(BASE_DIR, 'model.pth')
+        if os.path.exists(model_pth_path):
+            try:
+                import torch
+                state_dict = torch.load(model_pth_path, map_location='cpu', weights_only=False)
+                weights = {k: v.numpy() for k, v in state_dict.items()}
+                model.load_weights(weights)
+                print("Loaded model weights from model.pth fallback.")
+            except Exception as e:
+                print(f"Model load notice: {e}")
 
 load_resources()
 
@@ -257,16 +296,16 @@ def format_hour_to_tensor_row(h: WeatherHour) -> List[float]:
 @app.get("/api/status")
 def get_status():
     global model, scaler
-    if model is None:
+    if model is None or not model.w:
         load_resources()
         
     return {
         "status": "online",
         "system": "ISRO SIH260006 Explainable AI Nowcaster",
         "satellite": "INSAT-3D / INSAT-3DR Multispectral",
-        "device": str(device),
-        "model_type": type(model).__name__ if model else "None",
-        "model_loaded": model is not None and os.path.exists('model.pth'),
+        "device": "cpu (optimized numpy)",
+        "model_type": "NumpyPeepholeConvLSTM",
+        "model_loaded": model is not None and len(model.w) > 0,
         "scaler_loaded": scaler is not None,
         "features": FEATURES,
         "sequence_length": 24
@@ -400,30 +439,48 @@ def get_insat_scenarios():
 
 @app.get("/api/historical")
 def get_historical_slice(start_idx: int = 1000, length: int = 24):
-    if not os.path.exists('synthetic_weather_data.csv'):
-        raise HTTPException(status_code=404, detail="Dataset not found")
-        
-    df = pd.read_csv('synthetic_weather_data.csv')
-    total = len(df)
+    global cached_historical_data
+    csv_file = os.path.join(BASE_DIR, 'synthetic_weather_data.csv')
+    
+    if cached_historical_data is None:
+        if not os.path.exists(csv_file):
+            raise HTTPException(status_code=404, detail="Dataset not found")
+        with open(csv_file, 'r', encoding='utf-8') as f:
+            reader = csv.DictReader(f)
+            cached_historical_data = list(reader)
+            
+    total = len(cached_historical_data)
     start_idx = max(0, min(start_idx, total - length - 1))
     
-    slice_df = df.iloc[start_idx : start_idx + length]
-    records = slice_df.to_dict(orient="records")
-    next_actual_rain = float(df.iloc[start_idx + length]['rainfall_mm'])
+    slice_records = cached_historical_data[start_idx : start_idx + length]
+    formatted_slice = []
+    for r in slice_records:
+        formatted_row = {}
+        for k, v in r.items():
+            if k == 'date':
+                formatted_row[k] = v
+            else:
+                try:
+                    formatted_row[k] = float(v)
+                except ValueError:
+                    formatted_row[k] = v
+        formatted_slice.append(formatted_row)
+        
+    next_actual_rain = float(cached_historical_data[start_idx + length]['rainfall_mm'])
     
     return {
         "start_index": start_idx,
         "total_records": total,
-        "date_start": str(slice_df.iloc[0]['date']),
-        "date_end": str(slice_df.iloc[-1]['date']),
-        "sequence": records,
+        "date_start": str(formatted_slice[0]['date']),
+        "date_end": str(formatted_slice[-1]['date']),
+        "sequence": formatted_slice,
         "next_actual_rainfall_mm": round(next_actual_rain, 2)
     }
 
 @app.post("/api/predict")
 def predict_sequence(req: SequencePredictRequest):
     global model, scaler
-    if model is None or scaler is None:
+    if model is None or scaler is None or not model.w:
         load_resources()
         if model is None or scaler is None:
             raise HTTPException(status_code=500, detail="Model or Scaler not loaded.")
@@ -431,17 +488,16 @@ def predict_sequence(req: SequencePredictRequest):
     if len(req.sequence) != 24:
         raise HTTPException(status_code=400, detail=f"Expected 24 timesteps, got {len(req.sequence)}")
         
-    raw_matrix = np.array([format_hour_to_tensor_row(h) for h in req.sequence]) # (24, 11)
+    raw_matrix = np.array([format_hour_to_tensor_row(h) for h in req.sequence], dtype=np.float32) # (24, 11)
     
     # Scale input
     scaled_matrix = scaler.transform(raw_matrix)
-    input_tensor = torch.tensor(scaled_matrix, dtype=torch.float32).unsqueeze(0).to(device)
-    
     curr_hour = req.sequence[-1]
-    xai_explanation = model.explain_instance(input_tensor)
+    
+    xai_explanation = model.explain_instance(scaled_matrix)
     
     # Inverse transform prediction to actual mm/h
-    dummy_pred = np.zeros((1, 11))
+    dummy_pred = np.zeros((1, 11), dtype=np.float32)
     dummy_pred[0, 10] = xai_explanation["predicted_rainfall_mm"]
     unscaled_pred = scaler.inverse_transform(dummy_pred)[0, 10]
     pred_mm = max(0.0, round(float(unscaled_pred), 2))
@@ -480,7 +536,7 @@ def predict_sequence(req: SequencePredictRequest):
         "temporal_attention_weights": [round(float(w), 4) for w in xai_explanation["temporal_attention"]],
         "failure_diagnostics": failure_formatted,
         "xai": {
-            "temporal_attention": xai_explanation["temporal_attention"], # 24 weights
+            "temporal_attention": xai_explanation["temporal_attention"],
             "feature_attributions": feature_attributions,
             "failure_mode_analysis": failure_analysis
         },
@@ -531,7 +587,7 @@ def predict_single(req: SingleHourPredictRequest):
         if step == 23:
             rain_val = curr.rainfall_mm
         elif trend == "falling" and t_ir < -40.0 and step > 19:
-            rain_val = np.random.uniform(1.0, 5.0)
+            rain_val = float(np.random.uniform(1.0, 5.0))
             
         seq.append(WeatherHour(
             tir1_temp=round(float(t_ir), 1),
@@ -552,7 +608,7 @@ def predict_single(req: SingleHourPredictRequest):
 @app.post("/api/predict-forecast")
 def predict_multi_step_forecast(req: ForecastRequest):
     global model, scaler
-    if model is None or scaler is None:
+    if model is None or scaler is None or not model.w:
         load_resources()
         if model is None or scaler is None:
             raise HTTPException(status_code=500, detail="Model or Scaler not loaded.")
@@ -560,21 +616,17 @@ def predict_multi_step_forecast(req: ForecastRequest):
     if len(req.sequence) != 24:
         raise HTTPException(status_code=400, detail=f"Expected 24 timesteps, got {len(req.sequence)}")
         
-    raw_matrix = np.array([format_hour_to_tensor_row(h) for h in req.sequence])
+    raw_matrix = np.array([format_hour_to_tensor_row(h) for h in req.sequence], dtype=np.float32)
     
     forecast = []
     working_window = np.copy(raw_matrix)
     
     for step in range(req.steps):
         scaled_window = scaler.transform(working_window)
-        input_tensor = torch.tensor(scaled_window, dtype=torch.float32).unsqueeze(0).to(device)
-        
-        model.eval()
-        with torch.no_grad():
-            scaled_pred, _ = model(input_tensor)
-            scaled_val = scaled_pred.cpu().numpy()[0, 0]
+        scaled_pred, _ = model.forward(scaled_window)
+        scaled_val = scaled_pred[0, 0]
             
-        dummy_pred = np.zeros((1, 11))
+        dummy_pred = np.zeros((1, 11), dtype=np.float32)
         dummy_pred[0, 10] = scaled_val
         unscaled_pred = scaler.inverse_transform(dummy_pred)[0, 10]
         pred_mm = max(0.0, round(float(unscaled_pred), 2))
@@ -590,9 +642,9 @@ def predict_multi_step_forecast(req: ForecastRequest):
         next_row = np.copy(working_window[-1])
         next_row[10] = pred_mm
         if pred_mm > 15.0:
-            next_row[4] = max(970.0, next_row[4] - 0.4) # pressure drops in cloudburst
+            next_row[4] = max(970.0, next_row[4] - 0.4)
             next_row[5] = min(100.0, next_row[5] + 1.0)
-            next_row[7] = min(15.0, next_row[7] + 0.5) # moisture convergence surges
+            next_row[7] = min(15.0, next_row[7] + 0.5)
         else:
             next_row[4] = min(1030.0, next_row[4] + 0.3)
             
@@ -603,15 +655,16 @@ def predict_multi_step_forecast(req: ForecastRequest):
     }
 
 # Mount static folder
-os.makedirs("static", exist_ok=True)
-os.makedirs("static/css", exist_ok=True)
-os.makedirs("static/js", exist_ok=True)
-
-app.mount("/static", StaticFiles(directory="static"), name="static")
+static_path = os.path.join(BASE_DIR, "static")
+if os.path.exists(static_path):
+    app.mount("/static", StaticFiles(directory=static_path), name="static")
 
 @app.get("/")
 def serve_index():
-    return FileResponse("static/index.html")
+    index_file = os.path.join(BASE_DIR, "static", "index.html")
+    if os.path.exists(index_file):
+        return FileResponse(index_file)
+    return {"message": "ISRO SIH260006 Explainable AI Nowcaster API is running."}
 
 if __name__ == "__main__":
     import uvicorn
